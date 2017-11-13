@@ -12,7 +12,7 @@ TAGESARBEITSMINUTEN = 8*60
 def ist_zeitpunkt(zeit_string):
 	'''
 	Diese Funktion detektiert, ob ein string einen Zeitpunkt im
-	Format "hh:mm" ist und gibt boolsche Werte aus.
+	Format "hh:mm" ist und gibt einen boolschen Werte aus.
 	'''
 	
 	if not isinstance(zeit_string, str):
@@ -35,8 +35,10 @@ def ist_zeitpunkt(zeit_string):
 
 def ist_minuten(zeit_string):
 	'''
-	Diese Funktion detektiert, ob ein input_variable ein String im 
-	Format "hh:mm" ist und gibt dann einen  boolschen Werte aus.
+	Diese Funktion detektiert, ob zeit_string ein String ist, der 
+	einen numerischen Wert enthält, welcher zum Typ num gecastet 
+	werden kann. Oder selbst vom Typ int ist. 
+	Die Funktion gibt einen boolschen Werte aus.
 	'''
 	
 	if isinstance(zeit_string, str):
@@ -54,10 +56,6 @@ def ist_minuten(zeit_string):
 		return True
 	else:
 		return False
-
-
-def bla():
-	pass
 
 
 def zeitpunkt_zu_minuten(stunden_minuten):
@@ -193,11 +191,12 @@ def intervall_summen(liste,zeitpunkte,start_gegeben=True):
 		raise
 	
 	summe = 0
-	alt = zeitpunkte
 	vorzeichen_von_pausen = 1
+	alt = zeitpunkte
 	
 	if zeitpunkte % 2 == 0 or not start_gegeben:
 		vorzeichen_von_pausen = -1
+	
 	for i in range(len(liste)):
 		if ist_minuten(liste[i]):
 			try:

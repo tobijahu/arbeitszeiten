@@ -21,10 +21,10 @@ class TestStringMethods(unittest.TestCase):
 	def test_ist_minuten(self):
 		self.assertTrue(ist_minuten('90'))
 		self.assertTrue(ist_minuten(int(90)))
-#		self.assertFalse(ist_minuten(int(90)))
 		self.assertTrue(ist_minuten(90))
-#		self.assertFalse(ist_minuten(90))
+		self.assertTrue(ist_minuten(0))
 		self.assertFalse(ist_minuten('-1'))
+		self.assertFalse(ist_minuten('-1j'))
 	def test_zeitpunkt_zu_minuten(self):
 		self.assertEqual(zeitpunkt_zu_minuten("08:21"),8*60+21)
 		self.assertEqual(zeitpunkt_zu_minuten("24:00"),24*60)
@@ -58,12 +58,16 @@ class TestStringMethods(unittest.TestCase):
 		self.assertEqual(intervall_summen(['08:00',30,'16:30'],2),8*60)
 		self.assertEqual(intervall_summen(['08:00','09:30','09:45','12:00','12:30','16:30'],6),8*60-15)
 		self.assertEqual(intervall_summen(['08:00','09:30','09:45','12:00','12:30',30,'16:30'],6),8*60-45)
+		self.assertEqual(intervall_summen(['12:00','12:30','16:30'],3),(12*60)-(12*60+30)+(16*60+30))
+		self.assertEqual(intervall_summen(['12:00','12:30',30,'16:30'],3),(12*60)-(12*60+30)+(16*60+30)+30)
+		self.assertEqual(intervall_summen(['12:00','12:30',30,'16:30'],3,False),(12*60)-(12*60+30)+(16*60+30)-30)
+		self.assertEqual(intervall_summen(['45','30','16:30'],1,start_gegeben=False),16*60+30-45-30)
 		with self.assertRaises(AssertionError):
 			intervall_summen("['12:00','12:30','16:30']",50)
 		with self.assertRaises(AssertionError):
-			intervall_summen(['12:00','12:30','16:30'],'50')
+			intervall_summen(['12:00','12:30','16:30'],'3')
 		with self.assertRaises(AssertionError):
-			intervall_summen(['12:00','12:30','16:30'],50,0)
+			intervall_summen(['12:00','12:30','16:30'],3,0)
 	def test_liste_auswerten(self):
 		self.assertEqual(liste_auswerten(['24:00','456']), [True,False])
 		self.assertEqual(liste_auswerten(['23:09','456']), [True,False])
