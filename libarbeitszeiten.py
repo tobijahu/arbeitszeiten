@@ -5,10 +5,60 @@
 Aus Zeitwerten die Arbeitszeit berechnen
 '''
 
-import sys
 import re
 
 TAGESARBEITSMINUTEN = 8*60
+
+def ist_zeitpunkt(zeit_string):
+	'''
+	Diese Funktion detektiert, ob ein string einen Zeitpunkt im
+	Format "hh:mm" ist und gibt boolsche Werte aus.
+	'''
+	
+	if not isinstance(zeit_string, str):
+		return False
+	
+	pattern = re.compile("^[0-9]*\:[0-9]*$")
+	if not pattern.match(zeit_string):
+		return False
+	
+	zeit = str(zeit_string).split(':')
+	if len(zeit) != 2:
+		return False
+	
+	if int(zeit[1]) < 60 and int(zeit[0]) <= 24:
+		if int(zeit[0]) == 24 and int(zeit[1]) != 0:
+			return False
+		return True
+	return False
+
+
+def ist_minuten(zeit_string):
+	'''
+	Diese Funktion detektiert, ob ein input_variable ein String im 
+	Format "hh:mm" ist und gibt dann einen  boolschen Werte aus.
+	'''
+	
+	if isinstance(zeit_string, str):
+		if not zeit_string.isdigit():
+			return False
+	elif not isinstance(zeit_string, int):
+		return False
+	
+	try:
+		zeit_string = float(zeit_string)
+	except:
+		return False
+	
+	if zeit_string >= 0:
+		return True
+	else:
+		return False
+
+
+def bla():
+	pass
+
 
 def zeitpunkt_zu_minuten(stunden_minuten):
 	'''
@@ -16,20 +66,23 @@ def zeitpunkt_zu_minuten(stunden_minuten):
 	hh kann Werte von 00 bis 24 und mm Werte von 00 bis 59 annehmen
 	Also z.B. "11:03" zu 663
 	'''
-	assert isinstance(stunden_minuten, str),\
-		"%r is not a string" % stunden_minuten
-	hh,mm = stunden_minuten.split(':')
+	try:
+		assert isinstance(stunden_minuten, str),\
+			"%r is not a string" % stunden_minuten
+	except AssertionError:
+		raise
+	
+	if ist_zeitpunkt(stunden_minuten):
+		hh,mm = stunden_minuten.split(':')
+	else:
+		raise ValueError("%r is not a proper value." % stunden_minuten)
+	
 	try:
 		hh = int(hh)
 		mm = int(mm)
 	except:
 		raise ValueError("%r or %r are not base 10 integers." % (hh,mm))
-	if hh < 0 or hh > 24:
-		raise ValueError("%r is no proper value for hours." % hh)
-	if mm < 0 or mm > 59:
-		raise ValueError("%r is no proper value for minutes." % mm)
-	if hh == 24 and mm > 0:
-		raise ValueError("%r:%r is no proper time." % (hh,mm))
+	
 	return hh * 60 + mm
 
 
@@ -40,10 +93,15 @@ def minuten_zu_zeitpunkt(minuten):
 	minuten soll keine größeren Werte annehmen, als die Anzahl der Minuten eines
 	Tages.
 	'''
-	assert isinstance(minuten, int),\
-		"%r is not an integer" % minuten
+	try:
+		assert isinstance(minuten, int),\
+			"%r is not an integer" % minuten
+	except AssertionError:
+		raise
+	
 	if minuten < 0 or minuten > 24*60:
 		raise ValueError("%r is no proper value for minutes." % minuten)
+	
 	return (int(minuten / 60),minuten % 60)
 
 
@@ -52,66 +110,32 @@ def zeitpunkt_zu_string(paar):
 	paar erwartet ein Tupel aus zwei ganzen Zahlen >= 0 und konvertiert dieses 
 	zu einem String im Format "hh:mm".
 	'''
-	assert isinstance(paar[0], int),\
-		"%r is not an integer" % paar[0]
-	assert isinstance(paar[1], int),\
-		"%r is not an integer" % paar[1]
+	try:
+		assert isinstance(paar, tuple),\
+			"%r is not a tuple" % paar
+		assert isinstance(paar[0], int),\
+			"%r is not an integer" % paar[0]
+		assert isinstance(paar[1], int),\
+			"%r is not an integer" % paar[1]
+	except AssertionError:
+		raise
+	
+	try:
+		paar = (int(paar[0]),int(paar[1]))
+	except:
+		raise ValueError('%r nicht zulässig', paar)
+	
 	if paar[0] > 24 or paar[0] < 0:
 		raise ValueError('Wert fuer Stunden nicht zulaessig')
-	if paar[1] > 60 or paar[0] < 0:
+	if paar[1] > 59 or paar[0] < 0 or (paar[1] != 0 and paar[0] == 24):
 		raise ValueError('Wert fuer Minuten nicht zulaessig')
-	mm = paar[1]
-	if mm < 10:
-		mm = "0" + str(mm)
 	hh = paar[0]
 	if hh < 10:
 		hh = "0" + str(hh)
+	mm = paar[1]
+	if mm < 10:
+		mm = "0" + str(mm)
 	return str(hh) + ':' + str(mm)
-
-
-def ist_zeitpunkt(input_variable):
-	'''
-	Diese Funktion detektiert, ob ein string einen Zeitpunkt im
-	Format "hh:mm" ist und gibt boolsche Werte aus.
-	'''
-	assert isinstance(input_variable, str),\
-		"%r is not a string" % input_variable
-	
-	pattern = re.compile("^[0-2][0-9]\:[0-9][0-9]$")
-	if not pattern.match(input_variable):
-		return False
-	
-	array = str(input_variable).split(':')
-	hh = array[0]
-	if not hh.isdigit():
-		return False
-	
-	if len(array) == 2:
-		mm = array[1]
-		if not mm.isdigit():
-			return False
-	else:
-		return False
-	
-	if mm == '' or mm is None:
-		return False
-	elif int(mm) <= 60 and int(mm) >= 0 and int(hh) >= 0 and int(hh) <= 24:
-		if int(hh) == 24 and int(mm) != 0:
-			return False
-		return True
-
-
-def ist_minuten(input_variable):
-	'''
-	Diese Funktion detektiert, ob ein input_variable ein String im 
-	Format "hh:mm" ist und gibt dann einen  boolschen Werte aus.
-	'''
-	assert isinstance(input_variable, str),\
-		"%r is not a string" % input_variable
-	if input_variable.isdigit():
-		if int(input_variable) >= 0:
-			return True
-	return False
 
 
 def liste_auswerten(liste):
@@ -120,16 +144,28 @@ def liste_auswerten(liste):
 	der übergebenen list enthalten sind. Unterschieden werden Elemente im
 	Zeitpunkt- und Ganzzahligen format.
 	'''
-	assert isinstance(liste, list),\
-		"%r is not a list object" % liste
+	
+	try:
+		assert isinstance(liste, list),\
+			"%r is not a list object" % liste
+	except AssertionError:
+		raise
+	
 	bool_liste = []
+	
 	for wert in liste:
+		# Todo? Assert jedes Elementes
 		if ist_zeitpunkt(wert):
 			bool_liste.append(True)
-		elif ist_minuten(wert):
-			bool_liste.append(False)
+			continue
 		else:
-			raise ValueError('Falscher Eingabewert: %s' % (wert))
+			try:
+				float(wert)
+			except:
+				raise ValueError('Falscher Eingabewert: %s' % wert)
+			if float(wert) < 0:
+				raise ValueError('Falscher Eingabewert: %s' % wert)
+			bool_liste.append(False)
 	return bool_liste
 
 
@@ -146,19 +182,28 @@ def intervall_summen(liste,zeitpunkte,start_gegeben=True):
 	       Bsp: i_4 + (- i_3 + i_2) + ( - i_1 + i_0) - Pausen - tagesarbeitsminuten
 	            16:30 + (-15:30 + 15:00) + (-10:00 + 09:30)   -  30min   -   tagesarbeitsminuten
 	'''
-	assert isinstance(liste, list),\
-		"%r is not a list object" % liste
-	assert isinstance(zeitpunkte, int),\
-		"%r is not an integer" % zeitpunkte
-	assert isinstance(start_gegeben, bool),\
-		"%r is not a boolean" % start_gegeben
+	try:
+		assert isinstance(liste, list),\
+			"%r is not a list object" % liste
+		assert isinstance(zeitpunkte, int),\
+			"%r is not an integer" % zeitpunkte
+		assert isinstance(start_gegeben, bool),\
+			"%r is not a boolean" % start_gegeben
+	except AssertionError:
+		raise
+	
 	summe = 0
 	alt = zeitpunkte
 	vorzeichen_von_pausen = 1
+	
 	if zeitpunkte % 2 == 0 or not start_gegeben:
 		vorzeichen_von_pausen = -1
 	for i in range(len(liste)):
 		if ist_minuten(liste[i]):
+			try:
+				int(liste[i])
+			except:
+				raise ValueError('Falscher Eingabewert: %s' % i)
 			# Alle ganzzahligen Werte sind Pausenzeiten und werden von der Summe abgezogen
 			summe = summe + vorzeichen_von_pausen * int(liste[i])
 		elif ist_zeitpunkt(liste[i]):
@@ -167,6 +212,11 @@ def intervall_summen(liste,zeitpunkte,start_gegeben=True):
 			Zeitwerten zu erhalten, alterniert das
 			Vorzeichen der Zeitpunktwerte.
 			'''
+			try:
+				assert isinstance(liste[i], str),\
+					"%r is not a string" % liste[i]
+			except AssertionError:
+				raise
 			alt = alt + 1
 			summe = summe + (-1)**alt * int(zeitpunkt_zu_minuten(liste[i]))
 	return summe
@@ -177,14 +227,23 @@ def auswerten(liste,tagesarbeitsminuten,start_gegeben=True):
 	Weitere Auswertung der Elemente analog zu intervall_summen(). Weitere 
 	Merkmale wie tagesarbeitsstunden und start_gegeben erfolgen hier. 
 	'''
-	assert isinstance(liste, list),\
-		"%r is not a list object" % liste
-	assert isinstance(tagesarbeitsminuten, int),\
-		"%r is not an integer" % tagesarbeitsminuten
-	assert isinstance(start_gegeben, bool),\
-		"%r is not a boolean" % start_gegeben
+	
+	try:
+		assert isinstance(liste, list),\
+			"%r is not a list object" % liste
+		assert isinstance(tagesarbeitsminuten, int),\
+			"%r is not an integer" % tagesarbeitsminuten
+		assert isinstance(start_gegeben, bool),\
+			"%r is not a boolean" % start_gegeben
+	except AssertionError:
+		raise
+	
+	if int(tagesarbeitsminuten) < 0:
+		raise ValueError('Negativer Eingabewert für Tagesarbeitszeit: %s' % tagesarbeitsminuten)
+	
 	liste_bool = liste_auswerten(liste)
 	anzahl_zeitpunkte = sum(liste_bool)
+	
 	if anzahl_zeitpunkte == 0:
 		raise ValueError('No time anchor given. Enter at least a single explicit time (no duration).')
 	elif anzahl_zeitpunkte % 2 == 1:
