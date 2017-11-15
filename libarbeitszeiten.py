@@ -136,38 +136,76 @@ def zeitpunkt_zu_string(paar):
 	return str(hh) + ':' + str(mm)
 
 
-def liste_auswerten(liste):
-	'''
-	Generiere eine Liste, in der die Auswertungen zu den Listenelementen
-	der übergebenen list enthalten sind. Unterschieden werden Elemente im
-	Zeitpunkt- und Ganzzahligen format.
-	'''
-	
+def hol_zeitpunkte(liste):
 	try:
 		assert isinstance(liste, list),\
 			"%r is not a list object" % liste
 	except AssertionError:
 		raise
 	
-	bool_liste = []
+	zeitpunkt_liste = []
 	
-	for wert in liste:
-		# Todo? Assert jedes Elementes
-		if ist_zeitpunkt(wert):
-			bool_liste.append(True)
+	for i in range(len(liste)):
+		if ist_zeitpunkt(liste[i]):
+			zeitpunkt_liste.append(int(zeitpunkt_zu_minuten(liste[i])))
+		elif ist_minuten(liste[i]):
 			continue
 		else:
+			raise ValueError('Falscher Eingabewert: %s' % liste[i])
+			
+	return zeitpunkt_liste
+
+
+def intervall_summen(zeitpunktliste):
+	'''
+	Summe der Abstände der Zeitpunktpaare. Die Paarbildung findet nach 
+	Anzahl der Zeitpunkte statt. 
+	'''
+	try:
+		assert isinstance(zeitpunktliste, list),\
+			"%r is not a list object" % zeitpunktliste
+	except AssertionError:
+		raise
+	
+	summe = 0
+	for i in range(len(zeitpunktliste)):
+		try:
+			assert isinstance(zeitpunktliste[i], int),\
+				"%r is not an integer" % zeitpunktliste[i]
+		except AssertionError:
+			raise
+		
+		summe = summe + (-1)**(i+len(zeitpunktliste)+1) * zeitpunktliste[i]
+	return summe
+
+
+def pausen_summen(liste):
+	'''
+	Alle ganzzahligen Werte in der Liste sind Pausenzeiten und werden 
+	zur Pausenzeit summiert.
+	'''
+	try:
+		assert isinstance(liste, list),\
+			"%r is not a list object" % liste
+	except AssertionError:
+		raise
+	
+	summe = 0
+	for i in range(len(liste)):
+		if ist_minuten(liste[i]):
 			try:
-				float(wert)
+				int(liste[i])
 			except:
-				raise ValueError('Falscher Eingabewert: %s' % wert)
-			if float(wert) < 0:
-				raise ValueError('Falscher Eingabewert: %s' % wert)
-			bool_liste.append(False)
-	return bool_liste
+				raise ValueError('Falscher Eingabewert: %s' % i)
+			summe = summe + int(liste[i])
+	return summe
 
 
-def intervall_summen(liste,zeitpunkte,start_gegeben=True):
+def pausen_intervall_summen():
+	pass
+
+
+def auswerten(liste,tagesarbeitsminuten,start_gegeben=True):
 	'''
 	Kernfunktion zur berechnung aller Werte.
 	Standard:
@@ -179,52 +217,6 @@ def intervall_summen(liste,zeitpunkte,start_gegeben=True):
 	start_gegeben=False: Endezeit gegeben, Startzeit soll berechnet werden
 	       Bsp: i_4 + (- i_3 + i_2) + ( - i_1 + i_0) - Pausen - tagesarbeitsminuten
 	            16:30 + (-15:30 + 15:00) + (-10:00 + 09:30)   -  30min   -   tagesarbeitsminuten
-	'''
-	try:
-		assert isinstance(liste, list),\
-			"%r is not a list object" % liste
-		assert isinstance(zeitpunkte, int),\
-			"%r is not an integer" % zeitpunkte
-		assert isinstance(start_gegeben, bool),\
-			"%r is not a boolean" % start_gegeben
-	except AssertionError:
-		raise
-	
-	summe = 0
-	vorzeichen_von_pausen = 1
-	alt = zeitpunkte
-	
-	if zeitpunkte % 2 == 0 or not start_gegeben:
-		vorzeichen_von_pausen = -1
-	
-	for i in range(len(liste)):
-		if ist_minuten(liste[i]):
-			try:
-				int(liste[i])
-			except:
-				raise ValueError('Falscher Eingabewert: %s' % i)
-			# Alle ganzzahligen Werte sind Pausenzeiten und werden von der Summe abgezogen
-			summe = summe + vorzeichen_von_pausen * int(liste[i])
-		elif ist_zeitpunkt(liste[i]):
-			'''
-			Um die Differenz aus den benachbarten 
-			Zeitwerten zu erhalten, alterniert das
-			Vorzeichen der Zeitpunktwerte.
-			'''
-			try:
-				assert isinstance(liste[i], str),\
-					"%r is not a string" % liste[i]
-			except AssertionError:
-				raise
-			alt = alt + 1
-			summe = summe + (-1)**alt * int(zeitpunkt_zu_minuten(liste[i]))
-	return summe
-
-
-def auswerten(liste,tagesarbeitsminuten,start_gegeben=True):
-	'''
-	Weitere Auswertung der Elemente analog zu intervall_summen(). Weitere 
-	Merkmale wie tagesarbeitsstunden und start_gegeben erfolgen hier. 
 	'''
 	
 	try:
@@ -240,24 +232,23 @@ def auswerten(liste,tagesarbeitsminuten,start_gegeben=True):
 	if int(tagesarbeitsminuten) < 0:
 		raise ValueError('Negativer Eingabewert für Tagesarbeitszeit: %s' % tagesarbeitsminuten)
 	
-	liste_bool = liste_auswerten(liste)
-	anzahl_zeitpunkte = sum(liste_bool)
+	zeitpunkte_liste = hol_zeitpunkte(liste)
 	
-	if anzahl_zeitpunkte == 0:
+	if len(zeitpunkte_liste) == 0:
 		raise ValueError('No time anchor given. Enter at least a single explicit time (no duration).')
-	elif anzahl_zeitpunkte % 2 == 1:
+	elif len(zeitpunkte_liste) % 2 == 1:
 		# End- bzw. Startzeitpunkt berechnen
-		if liste_bool[0] == True and start_gegeben == True:
+		if ist_zeitpunkt(liste[0]) == True and start_gegeben == True:
 			# Zeitpunkt ist positiv, Pausen und Arbeitszeit werden addiert
-			return zeitpunkt_zu_string(minuten_zu_zeitpunkt(intervall_summen(liste,anzahl_zeitpunkte) + tagesarbeitsminuten))
-		elif liste_bool[0] == False or start_gegeben == False:
+			return zeitpunkt_zu_string(minuten_zu_zeitpunkt(intervall_summen(zeitpunkte_liste) + pausen_summen(liste) + tagesarbeitsminuten))
+		elif ist_zeitpunkt(liste[0]) == False or start_gegeben == False:
 			# Zeitpunkt ist positiv, Arbeitszeit und Pausen werden subtrahiert
-			return zeitpunkt_zu_string(minuten_zu_zeitpunkt(intervall_summen(liste,anzahl_zeitpunkte,start_gegeben=False) - tagesarbeitsminuten))
+			return zeitpunkt_zu_string(minuten_zu_zeitpunkt(intervall_summen(zeitpunkte_liste) - pausen_summen(liste) - tagesarbeitsminuten))
 	else:
 		# Gesamtarbeitszeit berechnen
-		return intervall_summen(liste,anzahl_zeitpunkte)
+		return intervall_summen(zeitpunkte_liste) - pausen_summen(liste)
 
 
-def pausen_summen(liste,zeitpunkte,start_gegeben=True):
-	
-	pass
+#def pausen_summen(liste,zeitpunkte,start_gegeben=True):
+#	
+#	pass

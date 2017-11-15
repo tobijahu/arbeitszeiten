@@ -53,35 +53,14 @@ class TestStringMethods(unittest.TestCase):
 			zeitpunkt_zu_string((22,61))
 	def test_intervall_summen(self):
 #		12:00 - 08:00 + 16:30 - 12:30 - 30min
-		self.assertEqual(intervall_summen(['08:00','12:00','12:30','16:30'],4),8*60)
-		self.assertEqual(intervall_summen(['08:00','30','16:30'],2),8*60)
-		self.assertEqual(intervall_summen(['08:00',30,'16:30'],2),8*60)
-		self.assertEqual(intervall_summen(['08:00','09:30','09:45','12:00','12:30','16:30'],6),8*60-15)
-		self.assertEqual(intervall_summen(['08:00','09:30','09:45','12:00','12:30',30,'16:30'],6),8*60-45)
-		self.assertEqual(intervall_summen(['12:00','12:30','16:30'],3),(12*60)-(12*60+30)+(16*60+30))
-		self.assertEqual(intervall_summen(['12:00','12:30',30,'16:30'],3),(12*60)-(12*60+30)+(16*60+30)+30)
-		self.assertEqual(intervall_summen(['12:00','12:30',30,'16:30'],3,False),(12*60)-(12*60+30)+(16*60+30)-30)
-		self.assertEqual(intervall_summen(['45','30','16:30'],1,start_gegeben=False),16*60+30-45-30)
+		self.assertEqual(intervall_summen([8*60,12*60,12*60+30,16*60+30]),8*60)
+		self.assertEqual(intervall_summen([8*60,9*60+30,9*60+45,12*60,12*60+30,16*60+30]),8*60-15)
+		# '08:00','09:30','09:45','12:00','12:30',30,'16:30'
+		self.assertEqual(intervall_summen([8*60,9*60+30,9*60+45,12*60,12*60+30,16*60+30]),8*60-15)
+		# '12:00','12:30','16:30'
+		self.assertEqual(intervall_summen([12*60,12*60+30,16*60+30]),(12*60)-(12*60+30)+(16*60+30))
 		with self.assertRaises(AssertionError):
-			intervall_summen("['12:00','12:30','16:30']",50)
-		with self.assertRaises(AssertionError):
-			intervall_summen(['12:00','12:30','16:30'],'3')
-		with self.assertRaises(AssertionError):
-			intervall_summen(['12:00','12:30','16:30'],3,0)
-	def test_liste_auswerten(self):
-		self.assertEqual(liste_auswerten(['24:00','456']), [True,False])
-		self.assertEqual(liste_auswerten(['23:09','456']), [True,False])
-		self.assertEqual(sum(liste_auswerten(['23:09','22:22','456'])), 2)
-		self.assertEqual(sum(liste_auswerten(['23:09','22:22',456])), 2)
-		with self.assertRaises(AssertionError):
-			liste_auswerten("'12:00','12:30','16:30'")
-		with self.assertRaises(AssertionError):
-			liste_auswerten("'12:00','12:30','16:30'")
-			liste_auswerten(('23:09','456'))
-		with self.assertRaises(ValueError):
-			liste_auswerten(['-456'])
-		with self.assertRaises(ValueError):
-			liste_auswerten(['-24:01'])
+			intervall_summen("['08:00',30,'16:30']")
 	def test_auswerten(self):
 		self.assertEqual(auswerten(['08:00','12:00','12:30','16:30'],8*60),480)
 		# 2 Zeitpunkte und Pausendauer:
