@@ -199,7 +199,7 @@ def intervall_summe(zeitpunktliste):
 		t_3 = 16:30 Uhr
 	seien Zeitwerte und die Intervalle (t_0,t_1) und (t_2,t_3) beschreiben
 	Arbeitszeiten. Dann beschreibt
-		(i_1 - i_0) + (i_3 - i_2)
+		(t_1 - t_0) + (t_3 - t_2)
 	die Gesamtlänge der beiden Intervalle, also die Gesamtarbeitszeit. 
 	----------------------------------------------------------------------
 	Fehlt zu genau einem Zeitpunktpaar ein Wert, ist die Summe ent-
@@ -219,7 +219,7 @@ def intervall_summe(zeitpunktliste):
 				"%r is not an integer" % zeitpunktliste[i]
 		except AssertionError:
 			raise
-		summe = summe + (-1)**(i+len(zeitpunktliste)+1) * zeitpunktliste[i]
+		summe += (-1)**(i+len(zeitpunktliste)+1) * zeitpunktliste[i]
 	return summe
 
 
@@ -235,13 +235,13 @@ def auswerten(gemischte_liste,tagesarbeitsminuten,start_gegeben=True):
 	----------------------------------------------------------------------
 	Kernfunktion zur berechnung aller Werte.
 	Standard:
-	       Bsp: i_1 - i_0 + i_3 - i_2 - Pausen
+	       Bsp: t_1 - t_0 + t_3 - t_2 - Pausen
 	            12:00 - 08:00 + 16:30 - 12:30 - 30min
 	start_gegeben=True: Startzeit gegeben, Endezeit soll berechnet werden
-	       Bsp: i_0 + (i_2 - i_1) + (i_4 - i_3) + Pausen + tagesarbeitsminuten
+	       Bsp: t_0 + (t_2 - t_1) + (t_4 - t_3) + Pausen + tagesarbeitsminuten
 	            08:00 + (12:20 - 12:00) + (09:30 - 09:00)   +   30min   +   tagesarbeitsminuten
 	start_gegeben=False: Endezeit gegeben, Startzeit soll berechnet werden
-	       Bsp: i_4 + (- i_3 + i_2) + ( - i_1 + i_0) - Pausen - tagesarbeitsminuten
+	       Bsp: t_4 + (- t_3 + t_2) + ( - t_1 + t_0) - Pausen - tagesarbeitsminuten
 	            16:30 + (-15:30 + 15:00) + (-10:00 + 09:30)   -  30min   -   tagesarbeitsminuten
 	'''
 	
