@@ -2,19 +2,20 @@
 # -*- coding: utf-8 -*-
 
 '''
-Aus Zeitwerten die Arbeitszeit berechnen
+Aus Zeitwerten die Arbeitszeit und Pausen berechnen
 '''
 
 import re
 
 TAGESARBEITSMINUTEN = 8*60
 
-def ist_zeitpunkt(zeit_string):
+def ist_zeitstring(zeit_string):
 	'''
+	Enthält der übergebene String einen gültigen Zeitwert?
 	Diese Funktion detektiert, ob ein string einen Zeitpunkt im
-	Format "hh:mm" ist und gibt einen boolschen Werte aus.
+	Format "hh:mm" ist und gibt entsprechend einen boolschen Wert
+	aus.
 	'''
-	
 	if not isinstance(zeit_string, str):
 		return False
 	
@@ -33,140 +34,184 @@ def ist_zeitpunkt(zeit_string):
 	return False
 
 
-def ist_minuten(zeit_string):
+def ist_minuten(zeit_wert):
 	'''
-	Diese Funktion detektiert, ob zeit_string ein String ist, der 
-	einen numerischen Wert enthält, welcher zum Typ num gecastet 
-	werden kann. Oder selbst vom Typ int ist. 
-	Die Funktion gibt einen boolschen Werte aus.
+	Kann der übergebene Wert als Zeitwert verwendet werden?
+	Diese Funktion detektiert, ob zeit_wert ein String ist, der 
+	einen numerischen Wert enthält, welcher zum Typ num oder 
+	float gecastet werden kann. Oder selbst bereits vom Typ int 
+	oder float ist. 
+	Die Funktion gibt einen boolschen Werte zurück.
 	'''
-	
-	if isinstance(zeit_string, str):
-		if not zeit_string.isdigit():
+	if isinstance(zeit_wert, str):
+		if not zeit_wert.isdigit():
 			return False
-	elif not isinstance(zeit_string, int):
+	elif not (isinstance(zeit_wert, int) or isinstance(zeit_wert, float)):
 		return False
-	
 	try:
-		zeit_string = float(zeit_string)
+		zeit_wert = float(zeit_wert)
 	except:
 		return False
-	
-	if zeit_string >= 0:
+	if zeit_wert >= 0:
 		return True
-	else:
-		return False
+	return False
 
 
-def zeitpunkt_zu_minuten(stunden_minuten):
+def ist_zeitpunkt(integer_tupel):
 	'''
-	Konvertiere einen Zeit-String im Format "hh:mm" zu einem Integer Wert.
+	Ist die Eingabe ein gültiges Tupel aus Stunden und Minuten?
+	Diese Funktion erwartet eine Eingabe in Form eines Zahlen-
+	tupels mit zwei positiven Werten. D.h. für 08:00 Uhr das 
+	Tupel (8,0).
+	Die Funktion gibt einen boolschen Wert zurück.
+	'''
+	try:
+		assert isinstance(integer_tupel, tuple),\
+			"%r is not a tuple" % integer_tupel
+		assert isinstance(integer_tupel[0], int) or isinstance(integer_tupel[0], float),\
+			"%r is not an integer" % integer_tupel[0]
+		assert isinstance(integer_tupel[1], int) or isinstance(integer_tupel[1], float),\
+			"%r is not an integer" % integer_tupel[1]
+	except AssertionError:
+		return False
+	if len(integer_tupel) != 2:
+		return False
+	try:
+		integer_tupel = (int(integer_tupel[0]),int(integer_tupel[1]))
+	except:
+		return False
+	if not 0 <= integer_tupel[0] <= 24:
+		return False
+	if (not 0 <= integer_tupel[1] <= 59) or (integer_tupel[1] != 0 and integer_tupel[0] == 24):
+		return False
+	return True
+
+
+def zeitstring_zu_zeitpunkt(zeit_string):
+	'''
+	Konvertiere einen Zeit-String im Format "hh:mm" zu einem Integer
+	Wertetupel im Format (hh,mm), wobei hh für Stunde und mm für Minute.
 	hh kann Werte von 00 bis 24 und mm Werte von 00 bis 59 annehmen
 	Also z.B. "11:03" zu 663
 	'''
 	try:
-		assert isinstance(stunden_minuten, str),\
-			"%r is not a string" % stunden_minuten
+		assert isinstance(zeit_string, str),\
+			"%r is not a tuple" % zeit_string
 	except AssertionError:
 		raise
-	
-	if ist_zeitpunkt(stunden_minuten):
-		hh,mm = stunden_minuten.split(':')
-	else:
-		raise ValueError("%r is not a proper value." % stunden_minuten)
-	
+	if not ist_zeitstring(zeit_string):
+		raise ValueError('%r has no correct Values.' % zeit_string)
+	hh,mm = zeit_string.split(':')
 	try:
 		hh = int(hh)
 		mm = int(mm)
 	except:
 		raise ValueError("%r or %r are not base 10 integers." % (hh,mm))
+	return (hh,mm)
 	
-	return hh * 60 + mm
+
+
+def zeitpunkt_zu_minuten(tupel):
+	'''
+	Der übergebene Zeitwert-Tupel (hh,mm) wird hier in einen 
+	Minuten-Zeitwert umgerechnet.
+	'''
+	try:
+		assert ist_zeitpunkt(tupel),\
+			"%r is not a tupel (hh,mm)" % tupel
+	except AssertionError:
+		raise
+	return tupel[0] * 60 + tupel[1]
 
 
 def minuten_zu_zeitpunkt(minuten):
 	'''
 	Diese Funktion konvertiert einen ganzzahligen Wert in ein paar von Zahlen,
-	das im "hh:mm" format ist.
-	minuten soll keine größeren Werte annehmen, als die Anzahl der Minuten eines
-	Tages.
+	das im Format eines Tupels (h,m) ist. 
+	Bsp.: 30 wird zu (0,30) konvertiert, was 00:30 Uhr entspricht.
+	Bem.: minuten soll keine größeren Werte annehmen, als die Anzahl der Minuten 
+	eines Tages.
 	'''
 	try:
-		assert isinstance(minuten, int),\
-			"%r is not an integer" % minuten
+		assert isinstance(minuten, int) or isinstance(minuten, float),\
+			"%r is not an integer or float" % minuten
 	except AssertionError:
 		raise
-	
-	if minuten < 0 or minuten > 24*60:
+	if not 0 <= minuten <= 24*60:
 		raise ValueError("%r is no proper value for minutes." % minuten)
-	
 	return (int(minuten / 60),minuten % 60)
 
 
-def zeitpunkt_zu_string(paar):
+def zeitpunkt_zu_zeitstring(tupel):
 	'''
-	paar erwartet ein Tupel aus zwei ganzen Zahlen >= 0 und konvertiert dieses 
-	zu einem String im Format "hh:mm".
+	Die Funktion erwartet ein Tupel aus zwei ganzen Zahlen >= 0 (d.h. (8,30) für 
+	08:30 Uhr) und konvertiert dieses zu einem String im Format "hh:mm" (das ent-
+	spräche im vorangegangenen Beispiel also "08:30").
 	'''
 	try:
-		assert isinstance(paar, tuple),\
-			"%r is not a tuple" % paar
-		assert isinstance(paar[0], int),\
-			"%r is not an integer" % paar[0]
-		assert isinstance(paar[1], int),\
-			"%r is not an integer" % paar[1]
+		assert ist_zeitpunkt(tupel),\
+			"input is not a tupel (hh,mm)"
 	except AssertionError:
 		raise
-	
-	try:
-		paar = (int(paar[0]),int(paar[1]))
-	except:
-		raise ValueError('%r nicht zulässig', paar)
-	
-	if paar[0] > 24 or paar[0] < 0:
-		raise ValueError('Wert fuer Stunden nicht zulaessig')
-	if paar[1] > 59 or paar[0] < 0 or (paar[1] != 0 and paar[0] == 24):
-		raise ValueError('Wert fuer Minuten nicht zulaessig')
-	hh = paar[0]
+	hh = tupel[0]
 	if hh < 10:
 		hh = "0" + str(hh)
-	mm = paar[1]
+	mm = tupel[1]
 	if mm < 10:
 		mm = "0" + str(mm)
 	return str(hh) + ':' + str(mm)
 
 
-def hol_zeitpunkte(liste):
+def filter_zpkte_pausen(liste_gemischt):
+	'''
+	Diese Funktion sortiert eine Liste von Zeitobjekten Pausendauer und Zeitpunkt
+	zu zwei Listen, in welchen nur Pausendauern oder Zeitpunkte jeweils enthalten
+	sind. 
+	'''
 	try:
-		assert isinstance(liste, list),\
-			"%r is not a list object" % liste
+		assert isinstance(liste_gemischt, list),\
+			"%r is not a list object" % liste_gemischt
 	except AssertionError:
 		raise
-	
 	zeitpunkt_liste = []
-	
-	for i in range(len(liste)):
-		if ist_zeitpunkt(liste[i]):
-			zeitpunkt_liste.append(int(zeitpunkt_zu_minuten(liste[i])))
-		elif ist_minuten(liste[i]):
-			continue
+	pausen_liste = []
+	for i in range(len(liste_gemischt)):
+		if ist_zeitpunkt(liste_gemischt[i]):
+			zeitpunkt_liste.append(int(zeitpunkt_zu_minuten(liste_gemischt[i])))
+		elif ist_minuten(liste_gemischt[i]):
+			pausen_liste.append(int(liste_gemischt[i]))
 		else:
-			raise ValueError('Falscher Eingabewert: %s' % liste[i])
-			
-	return zeitpunkt_liste
+			raise ValueError('Falscher Eingabewert')
+	return zeitpunkt_liste,pausen_liste
 
 
-def intervall_summen(zeitpunktliste):
+def intervall_summe(zeitpunktliste):
 	'''
 	Summe der Abstände der Zeitpunktpaare. Die Paarbildung findet nach 
 	Anzahl der Zeitpunkte statt. 
+	Sind die Zeitpunktpaare aus Anfangs und Endwert vollständig, be-
+	schreibt die Summe die Gesamtlänge aller Zeiträume, die die Arbeits-
+	zeit ergibt.
+	----------------------------------------------------------------------
+	Bsp: 	t_0 = 8:00 Uhr
+		t_1 = 12:00 Uhr
+		t_2 = 12:30 Uhr
+		t_3 = 16:30 Uhr
+	seien Zeitwerte und die Intervalle (t_0,t_1) und (t_2,t_3) beschreiben
+	Arbeitszeiten. Dann beschreibt
+		(i_1 - i_0) + (i_3 - i_2)
+	die Gesamtlänge der beiden Intervalle, also die Gesamtarbeitszeit. 
+	----------------------------------------------------------------------
+	Fehlt zu genau einem Zeitpunktpaar ein Wert, ist die Summe ent-
+	sprechend positiv oder negativ.
+	Die weitere Verarbeitung dieser Summe findet in der Funktion 
+	auswerten() Anwendung. 
 	'''
 	try:
 		assert isinstance(zeitpunktliste, list),\
 			"%r is not a list object" % zeitpunktliste
 	except AssertionError:
 		raise
-	
 	summe = 0
 	for i in range(len(zeitpunktliste)):
 		try:
@@ -174,39 +219,20 @@ def intervall_summen(zeitpunktliste):
 				"%r is not an integer" % zeitpunktliste[i]
 		except AssertionError:
 			raise
-		
 		summe = summe + (-1)**(i+len(zeitpunktliste)+1) * zeitpunktliste[i]
 	return summe
 
 
-def pausen_summen(liste):
+def auswerten(gemischte_liste,tagesarbeitsminuten,start_gegeben=True):
 	'''
-	Alle ganzzahligen Werte in der Liste sind Pausenzeiten und werden 
-	zur Pausenzeit summiert.
-	'''
-	try:
-		assert isinstance(liste, list),\
-			"%r is not a list object" % liste
-	except AssertionError:
-		raise
-	
-	summe = 0
-	for i in range(len(liste)):
-		if ist_minuten(liste[i]):
-			try:
-				int(liste[i])
-			except:
-				raise ValueError('Falscher Eingabewert: %s' % i)
-			summe = summe + int(liste[i])
-	return summe
-
-
-def pausen_intervall_summen():
-	pass
-
-
-def auswerten(liste,tagesarbeitsminuten,start_gegeben=True):
-	'''
+	Mit Hilfe der Summe, welche von der Funktion intervall_summe() aus-
+	gegeben wird, wird hier mit Hilfe der, als bekannt vorausgesetzten
+	Ziel-/Gesamtarbeitszeit, ggf. ein fehlender Zeitwert ausgegeben oder
+	die Gesamtarbeitszeit aus den vollständigen Zeitwertpaaren und zu-
+	sätzlich angegebenen Pausen berechnet.
+	Ausgegeben wird also entweder die Gesamtarbeitszeit sowie die Gesamt-
+	pausenzeit oder ein fehlender Startwert sowie Gesamtpausenzeit.
+	----------------------------------------------------------------------
 	Kernfunktion zur berechnung aller Werte.
 	Standard:
 	       Bsp: i_1 - i_0 + i_3 - i_2 - Pausen
@@ -220,35 +246,64 @@ def auswerten(liste,tagesarbeitsminuten,start_gegeben=True):
 	'''
 	
 	try:
-		assert isinstance(liste, list),\
-			"%r is not a list object" % liste
+		assert isinstance(gemischte_liste, list),\
+			"%r is not a list object" % gemischte_liste
 		assert isinstance(tagesarbeitsminuten, int),\
 			"%r is not an integer" % tagesarbeitsminuten
 		assert isinstance(start_gegeben, bool),\
 			"%r is not a boolean" % start_gegeben
 	except AssertionError:
 		raise
-	
 	if int(tagesarbeitsminuten) < 0:
 		raise ValueError('Negativer Eingabewert für Tagesarbeitszeit: %s' % tagesarbeitsminuten)
-	
-	zeitpunkte_liste = hol_zeitpunkte(liste)
-	
+	zeitpunkte_liste,pausen_liste = filter_zpkte_pausen(gemischte_liste)
 	if len(zeitpunkte_liste) == 0:
 		raise ValueError('No time anchor given. Enter at least a single explicit time (no duration).')
-	elif len(zeitpunkte_liste) % 2 == 1:
+	zeit_differenz = intervall_summe(zeitpunkte_liste)
+	if len(zeitpunkte_liste) % 2 == 1:
 		# End- bzw. Startzeitpunkt berechnen
-		if ist_zeitpunkt(liste[0]) == True and start_gegeben == True:
+		if ist_zeitpunkt(gemischte_liste[0]) == True and start_gegeben == True:
 			# Zeitpunkt ist positiv, Pausen und Arbeitszeit werden addiert
-			return zeitpunkt_zu_string(minuten_zu_zeitpunkt(intervall_summen(zeitpunkte_liste) + pausen_summen(liste) + tagesarbeitsminuten))
-		elif ist_zeitpunkt(liste[0]) == False or start_gegeben == False:
+			prognose_endzeit = zeit_differenz + sum(pausen_liste) + tagesarbeitsminuten
+			prognose_pausenzeit = prognose_endzeit - tagesarbeitsminuten - min(zeitpunkte_liste)
+			return None, prognose_endzeit, prognose_pausenzeit
+		elif ist_zeitpunkt(gemischte_liste[0]) == False or start_gegeben == False:
 			# Zeitpunkt ist positiv, Arbeitszeit und Pausen werden subtrahiert
-			return zeitpunkt_zu_string(minuten_zu_zeitpunkt(intervall_summen(zeitpunkte_liste) - pausen_summen(liste) - tagesarbeitsminuten))
+			prognose_startzeit = zeit_differenz - sum(pausen_liste) - tagesarbeitsminuten
+			prognose_pausenzeit = max(zeitpunkte_liste) - tagesarbeitsminuten - prognose_startzeit
+			return None, prognose_startzeit, prognose_pausenzeit
 	else:
 		# Gesamtarbeitszeit berechnen
-		return intervall_summen(zeitpunkte_liste) - pausen_summen(liste)
+		arbeitsminuten = zeit_differenz - sum(pausen_liste)
+		pausenzeit = max(zeitpunkte_liste) - min(zeitpunkte_liste) - arbeitsminuten
+		return arbeitsminuten, None, pausenzeit
 
 
-#def pausen_summen(liste,zeitpunkte,start_gegeben=True):
-#	
-#	pass
+def erfuellt_vorschrift_pausen_vereinfacht(tagesarbeitsminuten,tagespausenzeit):
+	'''
+	Diese Funktion wertet die gesetzlichen Bestimmungen zu Pausenzeiten 
+	des Arbeitszeitgesetzes aus. Es wird überprüft, ob die gearbeitete 
+	Zeit tagesarbeitsminuten und die Pausen tagespausenzeit den Bestim-
+	mungen genügen.
+	'''
+	try:
+		assert isinstance(tagesarbeitsminuten, int),\
+			"%r is not an integer" % tagesarbeitsminuten
+		assert isinstance(tagespausenzeit, int),\
+			"%r is not an integer" % tagespausenzeit
+	except AssertionError:
+		raise
+	if tagesarbeitsminuten <= 6*60:
+		return True
+	elif 6*60 < tagesarbeitsminuten <= 9*60 and tagespausenzeit >= 30:
+		return True
+	elif 9*60 < tagesarbeitsminuten <= 10*60 and tagespausenzeit >= 45:
+		return True
+	else:
+		return False
+
+
+def erfuellt_vorschrift_pausen():
+	pass
+
+
