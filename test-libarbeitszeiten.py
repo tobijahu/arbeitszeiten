@@ -1,8 +1,8 @@
 #!/bin/python3
 # -*- coding: utf-8 -*-
 
-from libarbeitszeiten import *
 import unittest
+from libarbeitszeiten import *
 
 class TestStringMethods(unittest.TestCase):
     def test_ist_zeitstring(self):
@@ -39,9 +39,9 @@ class TestStringMethods(unittest.TestCase):
         self.assertFalse(ist_minuten('-1'))
         self.assertFalse(ist_minuten('-1j'))
     def test_zeitstring_zu_zeitpunkt(self):
-        self.assertEqual(zeitstring_zu_zeitpunkt("08:21"),(8, 21))
-        self.assertEqual(zeitstring_zu_zeitpunkt("24:00"),(24, 0))
-        self.assertEqual(zeitstring_zu_zeitpunkt("01:01"),(1, 1))
+        self.assertEqual(zeitstring_zu_zeitpunkt("08:21"), (8, 21))
+        self.assertEqual(zeitstring_zu_zeitpunkt("24:00"), (24, 0))
+        self.assertEqual(zeitstring_zu_zeitpunkt("01:01"), (1, 1))
         with self.assertRaises(ValueError):
             zeitstring_zu_zeitpunkt("01:01:06")
         with self.assertRaises(ValueError):
@@ -49,9 +49,9 @@ class TestStringMethods(unittest.TestCase):
         with self.assertRaises(ValueError):
             zeitstring_zu_zeitpunkt("24:01")
     def test_zeitpunkt_zu_minuten(self):
-        self.assertEqual(zeitpunkt_zu_minuten((8, 21)),8*60+21)
-        self.assertEqual(zeitpunkt_zu_minuten((24, 0)),24*60)
-        self.assertEqual(zeitpunkt_zu_minuten((1, 1)),61)
+        self.assertEqual(zeitpunkt_zu_minuten((8, 21)), 8*60+21)
+        self.assertEqual(zeitpunkt_zu_minuten((24, 0)), 24*60)
+        self.assertEqual(zeitpunkt_zu_minuten((1, 1)), 61)
         with self.assertRaises(AssertionError):
             zeitpunkt_zu_minuten(40)
         with self.assertRaises(AssertionError):
@@ -73,74 +73,90 @@ class TestStringMethods(unittest.TestCase):
         with self.assertRaises(AssertionError):
             zeitpunkt_zu_zeitstring((22, 61))
     def test_filter_zpkte_pausen(self):
-        self.assertEqual(filter_zpkte_pausen([(8, 15), 55, (12, 15), (13, 0), 30]),([8*60+15, 12*60+15, 13*60], [55, 30]))
+        self.assertEqual(filter_zpkte_pausen([(8, 15), 55, (12, 15), (13, 0), 30]), \
+                         ([8*60+15, 12*60+15, 13*60], [55, 30]))
         with self.assertRaises(ValueError):
             filter_zpkte_pausen([(8, 15), 55, (12, 15), (25, 0), (13, 0), 30])
         with self.assertRaises(ValueError):
             filter_zpkte_pausen([(8, 15), 55, (12, 15), (22, 66), (13, 0), 30])
     def test_intervall_summe(self):
 #        12:00 - 08:00 + 16:30 - 12:30 - 30min
-        self.assertEqual(intervall_summe([8*60, 12*60, 12*60+30, 16*60+30]), 8*60)
-        self.assertEqual(intervall_summe([8*60, 9*60+30, 9*60+45, 12*60, 12*60+30, 16*60+30]), 8*60-15)
+        self.assertEqual(intervall_summe([8*60, 12*60, 12*60+30, 16*60+30]), \
+                         8*60)
+        self.assertEqual(intervall_summe([8*60, 9*60+30, 9*60+45, 12*60, 12*60+30, 16*60+30]), \
+                         8*60-15)
         # '08:00','09:30','09:45','12:00','12:30',30,'16:30'
-        self.assertEqual(intervall_summe([8*60, 9*60+30, 9*60+45, 12*60, 12*60+30, 16*60+30]),8*60-15)
+        self.assertEqual(intervall_summe([8*60, 9*60+30, 9*60+45, 12*60, 12*60+30, 16*60+30]), \
+                         8*60-15)
         # '12:00','12:30','16:30'
-        self.assertEqual(intervall_summe([12*60, 12*60+30, 16*60+30]), (12*60)-(12*60+30)+(16*60+30))
+        self.assertEqual(intervall_summe([12*60, 12*60+30, 16*60+30]), \
+                         (12*60)-(12*60+30)+(16*60+30))
         with self.assertRaises(AssertionError):
             intervall_summe("['08:00', 30, '16:30']")
     def test_auswerten(self):
 #        self.assertEqual(auswerten(['08:00','12:00','12:30','16:30'], 8*60),(480, None, 30))
-        self.assertEqual(auswerten([(8, 0),(12, 0),(12, 30),(16, 30)], 8*60),(480, None, 30))
+        self.assertEqual(auswerten([(8, 0), (12, 0), (12, 30), (16, 30)], 8*60), \
+                         (480, None, None, 30))
         # 2 Zeitpunkte und Pausendauer:
 #        self.assertEqual(auswerten(['08:00', '30', '16:30'], 8*60), (480, None, 30))
-        self.assertEqual(auswerten([(8, 0), 30, (16,30)], 8*60), (480, None ,30))
+        self.assertEqual(auswerten([(8, 0), 30, (16, 30)], 8*60), \
+                         (480, None, None, 30))
         # 2 Zeitpunkte und 2 Pausendauern:
 #        self.assertEqual(auswerten(['45','08:00','30','16:30'],8*60),(435,None,75))
-        self.assertEqual(auswerten([45, (8, 0), 30, (16, 30)], 8*60), (435, None, 75))
+        self.assertEqual(auswerten([45, (8, 0), 30, (16, 30)], 8*60), \
+                         (435, None, None, 75))
 #        self.assertEqual(auswerten(['08:00','30','16:30','45'],8*60),(435,None,75))
-        self.assertEqual(auswerten([(8, 0),30 ,(16, 30), 45], 8*60), (435, None, 75))
+        self.assertEqual(auswerten([(8, 0), 30, (16, 30), 45], 8*60), \
+                         (435, None, None, 75))
         # 1 Zeitpunkt und 2 Pausendauern:
 #        self.assertEqual(auswerten(['45','30','16:30'],8*60),"07:15")
 #        self.assertEqual(auswerten(['45','30','16:30'],8*60),(None,7*60+15,75))
-        self.assertEqual(auswerten([45, 30, (16, 30)], 8*60),(None, 7*60+15, 75))
+        self.assertEqual(auswerten([45, 30, (16, 30)], 8*60), \
+                         (None, 7*60+15, None, 75))
 #        self.assertEqual(auswerten(['45','30','16:30'],8*60,start_gegeben=False),"07:15")
 #        self.assertEqual(auswerten(['45','30','16:30'],8*60,start_gegeben=False),(None,7*60+15,75))
-        self.assertEqual(auswerten([45,30, (16, 30)], 8*60, start_gegeben=False),(None, 7*60+15, 75))
+        self.assertEqual(auswerten([45, 30, (16, 30)], 8*60, start_gegeben=False), \
+                         (None, 7*60+15, None, 75))
 #        self.assertEqual(auswerten(['08:00','30','46'],8*60),"17:16")
 #        self.assertEqual(auswerten(['08:00','30','46'],8*60),(None,17*60+16,30+46))
-        self.assertEqual(auswerten([(8, 0), 30, 46],8*60),(None,17*60+16, 30+46))
+        self.assertEqual(auswerten([(8, 0), 30, 46], 8*60), \
+                         (None, None, 17*60+16, 30+46))
         # 3 Zeitpunkte:
 #        self.assertEqual(auswerten(['12:00','12:30','16:30'],8*60,start_gegeben=False),'08:00')
 #        self.assertEqual(auswerten(['12:00','12:30','16:30'],8*60,start_gegeben=False),(None,8*60,30))
-        self.assertEqual(auswerten([(12, 0),(12, 30),(16, 30)], 8*60, start_gegeben=False),(None, 8*60, 30))
+        self.assertEqual(auswerten([(12, 0), (12, 30), (16, 30)], \
+                                   8*60, start_gegeben=False), \
+                         (None, 8*60, None, 30))
 #        self.assertEqual(auswerten(['12:00','12:30','16:30'],8*60),'24:00')
 #        self.assertEqual(auswerten(['12:00','12:30','16:30'],8*60),(None,24*60,4*60))
-        self.assertEqual(auswerten([(12, 0), (12, 30), (16, 30)], 8*60),(None, 24*60, 4*60))
+        self.assertEqual(auswerten([(12, 0), (12, 30), (16, 30)], 8*60), \
+                         (None, None, 24*60, 4*60))
         with self.assertRaises(AssertionError):
 #            auswerten("['12:00','12:30','16:30']",50)
-            auswerten("[(12,0), (12,30), (16,30)]",50)
+            auswerten("[(12,0), (12,30), (16,30)]", 50)
         with self.assertRaises(AssertionError):
 #            auswerten(['12:00', '12:30', '16:30'], '50')
-            auswerten([(12, 0),(12, 30),(16, 30)], '50')
+            auswerten([(12, 0), (12, 30), (16, 30)], '50')
         with self.assertRaises(AssertionError):
 #            auswerten(['12:00','12:30','16:30'],50,0)
-            auswerten([(12, 0), (12, 30), (16, 30)],50, 0)
+            auswerten([(12, 0), (12, 30), (16, 30)], 50, 0)
         with self.assertRaises(ValueError):
 #            auswerten(['12:00','12:30','24:01'],50)
-            auswerten([(12, 0),(12, 30),(24,1)],50)
+            auswerten([(12, 0), (12, 30), (24, 1)], 50)
         with self.assertRaises(ValueError):
 #            auswerten(['12:00','12:30','24:00'],-50)
-            auswerten([(12, 0),(12, 30),(16, 30)], -50)
-    def test_vorschrift_pausen_vereinfacht(self):
-        self.assertTrue(vorschrift_pausen_vereinfacht(6*60, 0))
-        self.assertTrue(vorschrift_pausen_vereinfacht(6*60+1, 30))
-        self.assertTrue(vorschrift_pausen_vereinfacht(8*60, 30))
-        self.assertTrue(vorschrift_pausen_vereinfacht(10*60, 45))
-        self.assertFalse(vorschrift_pausen_vereinfacht(8*60, 29))
-        self.assertFalse(vorschrift_pausen_vereinfacht(12*60, 45))
-        self.assertFalse(vorschrift_pausen_vereinfacht(10*60+1, 45))
-        
-    
+            auswerten([(12, 0), (12, 30), (16, 30)], -50)
+    def test_pausengesetz_vereinfacht(self):
+        self.assertTrue(pausengesetz_vereinfacht(6*60, 0))
+        self.assertTrue(pausengesetz_vereinfacht(6*60+1, 30))
+        self.assertTrue(pausengesetz_vereinfacht(8*60, 30))
+        self.assertTrue(pausengesetz_vereinfacht(10*60, 45))
+        self.assertFalse(pausengesetz_vereinfacht(8*60, 29))
+        self.assertFalse(pausengesetz_vereinfacht(12*60, 45))
+        self.assertFalse(pausengesetz_vereinfacht(10*60+1, 45))
+    def test_pausengesetz(self):
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()

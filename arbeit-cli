@@ -1,0 +1,55 @@
+#!/bin/python3
+# -*- coding: utf-8 -*-
+
+try:
+	from libarbeitszeiten import *
+except ImportError:
+	print('Could not import module libarbeitszeiten. Check, if libarbeitszeiten.py is available in this dir.')
+
+import sys
+
+
+def args_auswerten(*args):
+    tagesarbeitsminuten = None
+    start_gegeben = None
+    i = 1
+    for arg in args:
+        if arg.split("=")[0] == '-t':
+            try:
+                arg.split("=")[1]
+            except:
+                raise SyntaxError
+            if arg.split("=")[1] != '':
+                tagesarbeitsminuten = arg.split("=")[1]
+                i += 1
+            else:
+                raise ValueError
+        elif arg.split("=")[0] == '-e':
+            start_gegeben = False
+            i += 1
+        elif len(sys.argv) >= 1:
+#            return(tagesarbeitsminuten, start_gegeben, *sys.argv[i:])
+            return(tagesarbeitsminuten, start_gegeben, sys.argv[i:])
+        else:
+            raise SyntaxError
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 1:
+        raise SyntaxError("Zu wenig Argumente.")
+    else:
+        # If there are no keyword arguments
+        uebergabe = args_auswerten(*sys.argv)
+        tam = uebergabe[0]
+        start = uebergabe[1]
+#        uebergabe = uebergabe[]
+
+        if tam is None:
+            tam = TAGESARBEITSMINUTEN
+
+        if start is not None:
+            resultat = auswerten(list(uebergabe[4:]), tam, start)
+        else:
+            resultat = auswerten(list(uebergabe[4:]), tam)
+        print(resultat)
+
