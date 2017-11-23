@@ -131,6 +131,15 @@ class TestStringMethods(unittest.TestCase):
 #        self.assertEqual(auswerten(['12:00','12:30','16:30'],8*60),(None,24*60,4*60))
         self.assertEqual(auswerten([(12, 0), (12, 30), (16, 30)], 8*60), \
                          (None, None, 24*60, 4*60))
+        # unsortierte Zeitpunkte
+        self.assertEqual(auswerten([(16, 30), (12, 0)], 8*60), \
+                         (16*60+30 - 12*60, None, None, 0))
+        self.assertEqual(auswerten([(16, 30), (12, 0), (12, 30)], 8*60), \
+                         (None, None, 24*60, 16*60+30-(12*60+30)))
+        self.assertEqual(auswerten([(13, 0), (7, 0), (12, 30)], 8*60), \
+                         (None, None, 15*60+30, 30))
+        self.assertEqual(auswerten([(13, 0), (16, 30), (12, 30)], 8*60, False), \
+                         (None, 8*60, None, 30))
         with self.assertRaises(AssertionError):
 #            auswerten("['12:00','12:30','16:30']",50)
             auswerten("[(12,0), (12,30), (16,30)]", 50)

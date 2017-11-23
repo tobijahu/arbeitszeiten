@@ -229,7 +229,7 @@ def intervall_summe(zeitpunktliste):
     return summe
 
 
-def auswerten(gemischte_liste, tagesarbeitsminuten, start_gegeben=True):
+def auswerten(gemischte_liste, tagesarbeitsminuten, start_gegeben=True, sortieren=True):
     """Mit Hilfe der Summe, welche von der Funktion intervall_summe() aus-
     gegeben wird, wird hier mit Hilfe der, als bekannt vorausgesetzten
     Ziel-/Gesamtarbeitszeit, ggf. ein fehlender Zeitwert ausgegeben oder
@@ -266,6 +266,9 @@ def auswerten(gemischte_liste, tagesarbeitsminuten, start_gegeben=True):
     if not zeitpunkte_liste:
         raise ValueError('No time anchor given. Enter at least a single \
 explicit time (no duration).')
+
+    if sortieren:
+        zeitpunkte_liste = sorted(zeitpunkte_liste)
 
     zeit_differenz = intervall_summe(zeitpunkte_liste)
     if len(zeitpunkte_liste) % 2 == 1:

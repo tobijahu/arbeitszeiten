@@ -28,7 +28,6 @@ def args_auswerten(*args):
             start_gegeben = False
             i += 1
         elif len(sys.argv) >= 1:
-#            return(tagesarbeitsminuten, start_gegeben, *sys.argv[i:])
             return(tagesarbeitsminuten, start_gegeben, sys.argv[i:])
         else:
             raise SyntaxError
@@ -42,14 +41,26 @@ if __name__ == "__main__":
         uebergabe = args_auswerten(*sys.argv)
         tam = uebergabe[0]
         start = uebergabe[1]
-#        uebergabe = uebergabe[]
 
         if tam is None:
             tam = TAGESARBEITSMINUTEN
 
         if start is not None:
-            resultat = auswerten(list(uebergabe[4:]), tam, start)
+            resultat = auswerten(uebergabe[2], tam, start)
         else:
-            resultat = auswerten(list(uebergabe[4:]), tam)
-        print(resultat)
+            resultat = auswerten(uebergabe[2], tam)
+
+#        print(resultat)
+
+        if resultat[0]:
+            print('Arbeitszeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[0])))
+            tam = resultat[0]
+        if resultat[1]:
+            print('Startzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[1])))
+        if resultat[2]:
+            print('Endzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[2])))
+        if resultat[3]:
+            print('Pausenzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[3])))
+            if not pausengesetz_vereinfacht(tam, resultat[3]):
+                print('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
 
