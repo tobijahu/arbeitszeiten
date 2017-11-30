@@ -185,7 +185,7 @@ def filter_zpkte_pausen(liste_gemischt):
         elif ist_minuten(item):
             pausen_liste.append(int(item))
         else:
-            raise ValueError('Falscher Eingabewert')
+            raise ValueError('Falscher Eingabewert %r' % item)
 
     return zeitpunkt_liste, pausen_liste
 
@@ -229,7 +229,7 @@ def intervall_summe(zeitpunktliste):
     return summe
 
 
-def auswerten(gemischte_liste, tagesarbeitsminuten, start_gegeben=True, sortieren=True):
+def auswerten(gemischte_liste, tagesarbeitsminuten=None, start_gegeben=True, sortieren=True):
     """Mit Hilfe der Summe, welche von der Funktion intervall_summe() aus-
     gegeben wird, wird hier mit Hilfe der, als bekannt vorausgesetzten
     Ziel-/Gesamtarbeitszeit, ggf. ein fehlender Zeitwert ausgegeben oder
@@ -252,15 +252,12 @@ def auswerten(gemischte_liste, tagesarbeitsminuten, start_gegeben=True, sortiere
     try:
         assert isinstance(gemischte_liste, list),\
             "%r is not a list object" % gemischte_liste
-        assert isinstance(tagesarbeitsminuten, int),\
+        assert isinstance(tagesarbeitsminuten, int) or not tagesarbeitsminuten,\
             "%r is not an integer" % tagesarbeitsminuten
         assert isinstance(start_gegeben, bool),\
             "%r is not a boolean" % start_gegeben
     except AssertionError:
         raise
-
-    if int(tagesarbeitsminuten) < 0:
-        raise ValueError('Negativer Eingabewert für Tagesarbeitszeit: %s' % tagesarbeitsminuten)
 
     zeitpunkte_liste, pausen_liste = filter_zpkte_pausen(gemischte_liste)
     if not zeitpunkte_liste:
@@ -272,6 +269,10 @@ explicit time (no duration).')
 
     zeit_differenz = intervall_summe(zeitpunkte_liste)
     if len(zeitpunkte_liste) % 2 == 1:
+        if not tagesarbeitsminuten:
+            raise AssertionError('Eingabewert für Tagesarbeitszeit ist %s' % tagesarbeitsminuten)
+        if int(tagesarbeitsminuten) < 0:
+            raise ValueError('Negativer Eingabewert für Tagesarbeitszeit: %s' % tagesarbeitsminuten)
         # End- bzw. Startzeitpunkt n
         if ist_zeitpunkt(gemischte_liste[0]) and start_gegeben:
             # Zeitpunkt ist positiv, Pausen und Arbeitszeit werden addiert

@@ -9,28 +9,60 @@ except ImportError:
 import sys
 
 
+def print_help():
+    print("Usage: " + sys.argv[0] + " -e -t 12:00 15:00 15:30")
+    print("  -h, --help     diese Hilfe anzeigen und beenden")
+    print("      --version  Versionsinformation anzeigen und beenden")
+    print("  -e             Startzeit nicht gegeben")
+    print("  -t             ")
+    print("  -t=5           Gesamte Arbeitszeit des Tages in Minuten")
+    sys.exit(0)
+
+
+def option_tagesarbeitsminuten(arg, tagesarbeitsminuten):
+    if not arg.split("=")[0] == '-t':
+        return None
+    if len(arg.split("=")) > 1:
+        if arg.split("=")[1] == '':
+            raise ValueError
+        tagesarbeitsminuten = arg.split("=")[1]
+    return tagesarbeitsminuten
+
+
+def option_ende_gegeben(arg):
+    if arg.split("=")[0] == '-e':
+        return True
+    return False
+
+
+def option_help(arg):
+    if arg.split("=")[0] == '-h' or arg.split("=")[0] == '--help':
+        return True
+    return False
+
+
 def args_auswerten(*args):
     tagesarbeitsminuten = None
-    start_gegeben = None
-    i = 1
+    start_gegeben = True
+    wert_liste = list(args)
     for arg in args:
-        if arg.split("=")[0] == '-t':
-            try:
-                arg.split("=")[1]
-            except:
-                raise SyntaxError
-            if arg.split("=")[1] != '':
-                tagesarbeitsminuten = arg.split("=")[1]
-                i += 1
-            else:
-                raise ValueError
-        elif arg.split("=")[0] == '-e':
+        tagesarbeitsminuten_kandidat = option_tagesarbeitsminuten(arg, TAGESARBEITSMINUTEN)
+        if not tagesarbeitsminuten_kandidat is None:
+            tagesarbeitsminuten = tagesarbeitsminuten_kandidat
+            wert_liste.remove(arg)
+            continue
+        elif option_ende_gegeben(arg):
             start_gegeben = False
-            i += 1
-        elif len(sys.argv) >= 1:
-            return(tagesarbeitsminuten, start_gegeben, sys.argv[i:])
+            wert_liste.remove(arg)
+            continue
+        elif option_help(arg):
+            print_help()
         else:
-            raise SyntaxError
+            return(tagesarbeitsminuten, start_gegeben, wert_liste)
+
+#def resultat_wrappen(*args):
+#    r:w
+
 
 
 if __name__ == "__main__":
@@ -38,19 +70,27 @@ if __name__ == "__main__":
         raise SyntaxError("Zu wenig Argumente.")
     else:
         # If there are no keyword arguments
-        uebergabe = args_auswerten(*sys.argv)
-        tam = uebergabe[0]
-        start = uebergabe[1]
+        tam = TAGESARBEITSMINUTEN
+        uebergabe = args_auswerten(*sys.argv[1:])
+        print(uebergabe)
+        if not uebergabe:
+            print_help()
+        if len(uebergabe) <= 2:
+            print("Keine Werte übergeben.")
+#            raise SyntaxError("Keine Werte übergeben.")
 
-        if tam is None:
-            tam = TAGESARBEITSMINUTEN
 
-        if start is not None:
-            resultat = auswerten(uebergabe[2], tam, start)
+        if uebergabe[0]:
+            tam = uebergabe[0]
+
+        if uebergabe[1] == False:
+#            resultat = auswerten(uebergabe[2], uebergabe[0], False)
+            resultat = auswerten(uebergabe[2], tam, False)
         else:
+#            resultat = auswerten(uebergabe[2], uebergabe[0])
             resultat = auswerten(uebergabe[2], tam)
 
-#        print(resultat)
+        print(resultat)
 
         if resultat[0]:
             print('Arbeitszeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[0])))
