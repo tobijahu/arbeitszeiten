@@ -58,6 +58,8 @@ class TestStringMethods(unittest.TestCase):
             zeitpunkt_zu_minuten("22:01")
     def test_minuten_zu_zeitpunkt(self):
         self.assertEqual(minuten_zu_zeitpunkt(135), (2, 15))
+        a = minuten_zu_zeitpunkt(523.7249)
+        self.assertEqual((round(a[0],4),round(a[1],4)), (8, 43.7249))
         with self.assertRaises(ValueError):
             minuten_zu_zeitpunkt(25*60)
     def test_zeitpunkt_zu_zeitstring(self):
@@ -75,9 +77,9 @@ class TestStringMethods(unittest.TestCase):
     def test_filter_zpkte_pausen(self):
         self.assertEqual(filter_zpkte_pausen([(8, 15), 55, (12, 15), (13, 0), 30]), \
                          ([8*60+15, 12*60+15, 13*60], [55, 30]))
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             filter_zpkte_pausen([(8, 15), 55, (12, 15), (25, 0), (13, 0), 30])
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             filter_zpkte_pausen([(8, 15), 55, (12, 15), (22, 66), (13, 0), 30])
     def test_intervall_summe(self):
 #        12:00 - 08:00 + 16:30 - 12:30 - 30min
@@ -131,6 +133,8 @@ class TestStringMethods(unittest.TestCase):
 #        self.assertEqual(auswerten(['12:00','12:30','16:30'],8*60),(None,24*60,4*60))
         self.assertEqual(auswerten([(12, 0), (12, 30), (16, 30)], 8*60), \
                          (None, None, 24*60, 4*60))
+        self.assertEqual(auswerten([(8, 0), (12, 00), (12, 30)], 8*60), \
+                         (None, None, (8+8)*60+30, 30))
         # unsortierte Zeitpunkte
         self.assertEqual(auswerten([(16, 30), (12, 0)], 8*60), \
                          (16*60+30 - 12*60, None, None, 0))
@@ -149,7 +153,7 @@ class TestStringMethods(unittest.TestCase):
         with self.assertRaises(AssertionError):
 #            auswerten(['12:00','12:30','16:30'],50,0)
             auswerten([(12, 0), (12, 30), (16, 30)], 50, 0)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
 #            auswerten(['12:00','12:30','24:01'],50)
             auswerten([(12, 0), (12, 30), (24, 1)], 50)
         with self.assertRaises(ValueError):
@@ -157,11 +161,12 @@ class TestStringMethods(unittest.TestCase):
             auswerten([(12, 0), (12, 30), (16, 30)], -50)
     def test_pausengesetz_vereinfacht(self):
         self.assertTrue(pausengesetz_vereinfacht(6*60, 0))
+        self.assertFalse(pausengesetz_vereinfacht(6*60+1, 29))
         self.assertTrue(pausengesetz_vereinfacht(6*60+1, 30))
-        self.assertTrue(pausengesetz_vereinfacht(8*60, 30))
+        self.assertTrue(pausengesetz_vereinfacht(9*60, 30))
+        self.assertFalse(pausengesetz_vereinfacht(9*60+1, 44))
+        self.assertTrue(pausengesetz_vereinfacht(9*60+1, 45))
         self.assertTrue(pausengesetz_vereinfacht(10*60, 45))
-        self.assertFalse(pausengesetz_vereinfacht(8*60, 29))
-        self.assertFalse(pausengesetz_vereinfacht(12*60, 45))
         self.assertFalse(pausengesetz_vereinfacht(10*60+1, 45))
     def test_pausengesetz(self):
         pass

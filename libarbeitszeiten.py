@@ -259,9 +259,15 @@ def auswerten(gemischte_liste, tagesarbeitsminuten=None, start_gegeben=True, sor
     except AssertionError:
         raise
 
-    zeitpunkte_liste, pausen_liste = filter_zpkte_pausen(gemischte_liste)
+    zeitpunkte_liste, pausen_liste = None, None
+
+    try:
+        zeitpunkte_liste, pausen_liste = filter_zpkte_pausen(gemischte_liste)
+    except TypeError:
+        print('Input is not of the right type.')
+
     if not zeitpunkte_liste:
-        raise ValueError('No time anchor given. Enter at least a single \
+        raise TypeError('No time anchor given. Enter at least a single \
 explicit time (no duration).')
 
     if sortieren:

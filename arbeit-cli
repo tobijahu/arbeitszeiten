@@ -26,7 +26,7 @@ def option_tagesarbeitsminuten(arg, tagesarbeitsminuten):
         if arg.split("=")[1] == '':
             raise ValueError
         tagesarbeitsminuten = arg.split("=")[1]
-    return tagesarbeitsminuten
+    return int(tagesarbeitsminuten)
 
 
 def option_ende_gegeben(arg):
@@ -72,26 +72,42 @@ if __name__ == "__main__":
         # If there are no keyword arguments
         tam = TAGESARBEITSMINUTEN
         uebergabe = args_auswerten(*sys.argv[1:])
-        print(uebergabe)
+#        print(uebergabe)
         if not uebergabe:
             print_help()
         if len(uebergabe) <= 2:
             print("Keine Werte übergeben.")
 #            raise SyntaxError("Keine Werte übergeben.")
 
-
+        ''' Falls keine Gesamtarbeitszeit übergeben wurde, wird die Standardzeit
+            genommen.
+        '''
         if uebergabe[0]:
             tam = uebergabe[0]
 
+        ''' auswerten() erwartet als zweite Eingabe eine Liste aus integers
+            und Zeitpunkten (h,m) mit Stunden h und Minuten m. Die zeitstrings
+            in uebergabe[2] enthalten keine Zeitpunkte/Tupel, sondern zeit-
+            strings. Deshalb muss hier zunächst konvertiert werden.
+        '''
+        konv_uebergabe_werte = []
+        for item in uebergabe[2]:
+            if ist_zeitstring(item):
+                konv_uebergabe_werte.append(zeitstring_zu_zeitpunkt(item))
+            else:
+                konv_uebergabe_werte.append(item)
+
+        ''' Die essentielle Auswertung wird nun durchgeführt.
+        '''
         if uebergabe[1] == False:
-#            resultat = auswerten(uebergabe[2], uebergabe[0], False)
-            resultat = auswerten(uebergabe[2], tam, False)
+            resultat = auswerten(konv_uebergabe_werte, tam, False)
         else:
-#            resultat = auswerten(uebergabe[2], uebergabe[0])
-            resultat = auswerten(uebergabe[2], tam)
+            resultat = auswerten(konv_uebergabe_werte, tam)
 
-        print(resultat)
+#        print(resultat)
 
+        ''' Je nach zurückgegebenen Werten, wird das Ergebnis angezeigt.
+        '''
         if resultat[0]:
             print('Arbeitszeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[0])))
             tam = resultat[0]
@@ -99,7 +115,7 @@ if __name__ == "__main__":
             print('Startzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[1])))
         if resultat[2]:
             print('Endzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[2])))
-        if resultat[3]:
+        if resultat[3] or resultat[3] == 0:
             print('Pausenzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[3])))
             if not pausengesetz_vereinfacht(tam, resultat[3]):
                 print('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
