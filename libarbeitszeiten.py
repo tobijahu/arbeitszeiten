@@ -10,7 +10,8 @@ import re
 TAGESARBEITSMINUTEN = 8*60
 
 def ist_zeitstring(zeit_string):
-    """Enthält der übergebene String einen gültigen Zeitwert?
+    """
+    Enthält der übergebene String einen gültigen Zeitwert?
     Diese Funktion detektiert, ob ein string einen Zeitpunkt im
     Format "hh:mm" ist und gibt entsprechend einen boolschen Wert
     aus.
@@ -35,7 +36,8 @@ def ist_zeitstring(zeit_string):
 
 
 def ist_minuten(zeit_wert):
-    """Kann der übergebene Wert als Zeitwert verwendet werden?
+    """
+    Kann der übergebene Wert als Zeitwert verwendet werden?
     Diese Funktion detektiert, ob zeit_wert ein String ist, der
     einen numerischen Wert enthält, welcher zum Typ num oder
     float gecastet werden kann. Oder selbst bereits vom Typ int
@@ -57,7 +59,8 @@ def ist_minuten(zeit_wert):
 
 
 def ist_zeitpunkt(integer_tupel):
-    """Ist die Eingabe ein gültiges Tupel aus Stunden und Minuten?
+    """
+    Ist die Eingabe ein gültiges Tupel aus Stunden und Minuten?
     Diese Funktion erwartet eine Eingabe in Form eines Zahlen-
     tupels mit zwei positiven Werten. D.h. für 08:00 Uhr das
     Tupel (8,0).
@@ -86,7 +89,8 @@ def ist_zeitpunkt(integer_tupel):
 
 
 def zeitstring_zu_zeitpunkt(zeit_string):
-    """Konvertiere einen Zeit-String im Format "hh:mm" zu einem Integer
+    """
+    Konvertiere einen Zeit-String im Format "hh:mm" zu einem Integer
     Wertetupel im Format (hh,mm), wobei hh für Stunde und mm für Minute.
     hh kann Werte von 00 bis 24 und mm Werte von 00 bis 59 annehmen
     Also z.B. "11:03" zu 663
@@ -111,7 +115,8 @@ def zeitstring_zu_zeitpunkt(zeit_string):
 
 
 def zeitpunkt_zu_minuten(tupel):
-    """Der übergebene Zeitwert-Tupel (hh,mm) wird hier in einen
+    """
+    Der übergebene Zeitwert-Tupel (hh,mm) wird hier in einen
     Minuten-Zeitwert umgerechnet.
     """
     try:
@@ -124,7 +129,8 @@ def zeitpunkt_zu_minuten(tupel):
 
 
 def minuten_zu_zeitpunkt(minuten):
-    """Diese Funktion konvertiert einen ganzzahligen Wert in ein paar von Zahlen,
+    """
+    Diese Funktion konvertiert einen ganzzahligen Wert in ein paar von Zahlen,
     das im Format eines Tupels (h,m) ist.
     Bsp.: 30 wird zu (0,30) konvertiert, was 00:30 Uhr entspricht.
     Bem.: minuten soll keine größeren Werte annehmen, als die Anzahl der Minuten
@@ -143,7 +149,8 @@ def minuten_zu_zeitpunkt(minuten):
 
 
 def zeitpunkt_zu_zeitstring(tupel):
-    """Die Funktion erwartet ein Tupel aus zwei ganzen Zahlen >= 0 (d.h. (8,30) für
+    """
+    Die Funktion erwartet ein Tupel aus zwei ganzen Zahlen >= 0 (d.h. (8,30) für
     08:30 Uhr) und konvertiert dieses zu einem String im Format "hh:mm" (das ent-
     spräche im vorangegangenen Beispiel also "08:30").
     """
@@ -165,7 +172,8 @@ def zeitpunkt_zu_zeitstring(tupel):
 
 
 def filter_zpkte_pausen(liste_gemischt):
-    """Diese Funktion sortiert eine Liste von Zeitobjekten Pausendauer und Zeitpunkt
+    """
+    Diese Funktion sortiert eine Liste von Zeitobjekten Pausendauer und Zeitpunkt
     zu zwei Listen, in welchen nur Pausendauern oder Zeitpunkte jeweils enthalten
     sind.
     """
@@ -191,7 +199,8 @@ def filter_zpkte_pausen(liste_gemischt):
 
 
 def intervall_summe(zeitpunktliste):
-    """Summe der Abstände der Zeitpunktpaare. Die Paarbildung findet nach
+    """
+    Summe der Abstände der Zeitpunktpaare. Die Paarbildung findet nach
     Anzahl der Zeitpunkte statt.
     Sind die Zeitpunktpaare aus Anfangs und Endwert vollständig, be-
     schreibt die Summe die Gesamtlänge aller Zeiträume, die die Arbeits-
@@ -230,7 +239,8 @@ def intervall_summe(zeitpunktliste):
 
 
 def auswerten(gemischte_liste, tagesarbeitsminuten=None, start_gegeben=True, sortieren=True):
-    """Mit Hilfe der Summe, welche von der Funktion intervall_summe() aus-
+    """
+    Mit Hilfe der Summe, welche von der Funktion intervall_summe() aus-
     gegeben wird, wird hier mit Hilfe der, als bekannt vorausgesetzten
     Ziel-/Gesamtarbeitszeit, ggf. ein fehlender Zeitwert ausgegeben oder
     die Gesamtarbeitszeit aus den vollständigen Zeitwertpaaren und zu-
@@ -261,10 +271,11 @@ def auswerten(gemischte_liste, tagesarbeitsminuten=None, start_gegeben=True, sor
 
     zeitpunkte_liste, pausen_liste = None, None
 
-    try:
-        zeitpunkte_liste, pausen_liste = filter_zpkte_pausen(gemischte_liste)
-    except TypeError:
-        print('Input is not of the right type.')
+#    try:
+#        zeitpunkte_liste, pausen_liste = filter_zpkte_pausen(gemischte_liste)
+#    except TypeError:
+#        print('Input is not of the right type.')
+    zeitpunkte_liste, pausen_liste = filter_zpkte_pausen(gemischte_liste)
 
     if not zeitpunkte_liste:
         raise TypeError('No time anchor given. Enter at least a single \
@@ -284,21 +295,25 @@ explicit time (no duration).')
             # Zeitpunkt ist positiv, Pausen und Arbeitszeit werden addiert
             prognose_endzeit = zeit_differenz + sum(pausen_liste) + tagesarbeitsminuten
             prognose_pausenzeit = prognose_endzeit - tagesarbeitsminuten - min(zeitpunkte_liste)
-            return None, None, prognose_endzeit, prognose_pausenzeit
+            konform = pausengesetz_vereinfacht(tagesarbeitsminuten, prognose_pausenzeit)
+            return None, None, prognose_endzeit, prognose_pausenzeit, konform
         elif not ist_zeitpunkt(gemischte_liste[0]) or not start_gegeben:
             # Zeitpunkt ist positiv, Arbeitszeit und Pausen werden subtrahiert
             prognose_startzeit = zeit_differenz - sum(pausen_liste) - tagesarbeitsminuten
             prognose_pausenzeit = max(zeitpunkte_liste) - tagesarbeitsminuten - prognose_startzeit
-            return None, prognose_startzeit, None, prognose_pausenzeit
+            konform = pausengesetz_vereinfacht(tagesarbeitsminuten, prognose_pausenzeit)
+            return None, prognose_startzeit, None, prognose_pausenzeit, konform
     else:
         # Gesamtarbeitszeit berechnen
         arbeitsminuten = zeit_differenz - sum(pausen_liste)
         pausenzeit = max(zeitpunkte_liste) - min(zeitpunkte_liste) - arbeitsminuten
-        return arbeitsminuten, None, None, pausenzeit
+        konform = pausengesetz_vereinfacht(arbeitsminuten, pausenzeit)
+        return arbeitsminuten, None, None, pausenzeit, konform
 
 
 def pausengesetz_vereinfacht(tagesarbeitsminuten, tagespausenzeit):
-    """Diese Funktion wertet die gesetzlichen Bestimmungen zu Pausenzeiten
+    """
+    Diese Funktion wertet die gesetzlichen Bestimmungen zu Pausenzeiten
     des Arbeitszeitgesetzes aus. Es wird überprüft, ob die gearbeitete
     Zeit tagesarbeitsminuten und die Pausen tagespausenzeit den Bestim-
     mungen genügen.
@@ -322,7 +337,8 @@ def pausengesetz_vereinfacht(tagesarbeitsminuten, tagespausenzeit):
 
 
 def pausengesetz():
-    """Diese Funktion wertet aus, ob Pausen zum richtigen Zeitpunkt nach
+    """
+    Diese Funktion wertet aus, ob Pausen zum richtigen Zeitpunkt nach
     Gesetz angegeben wurden.
     """
     pass
