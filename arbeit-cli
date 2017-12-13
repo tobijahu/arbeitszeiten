@@ -11,13 +11,14 @@ import sys
 
 def print_help():
     print("Usage: " + sys.argv[0] + " -e -t 12:00 15:00 15:30")
-    print("  -h, --help     diese Hilfe anzeigen und beenden")
-    print("      --version  Versionsinformation anzeigen und beenden")
-    print("  -e             Startzeit nicht gegeben")
-    print("  -t             ")
-    print("  -t=5           Gesamte Arbeitszeit des Tages in Minuten")
-    print("  -o  --outlaw   Info zu nicht-gesetzeskonformen Eingaben ausgeben")
-    print("  -r  --raw      Rohausgabe")
+    print("  -h, --help        diese Hilfe anzeigen und beenden")
+    print("      --version     Versionsinformation anzeigen und beenden")
+    print("  -e                Startzeit nicht gegeben")
+    print("  -t                ")
+    print("  -t=5              Gesamte Arbeitszeit des Tages in Minuten")
+    print("  -o  --outlaw      Info zu nicht-gesetzeskonformen Eingaben ausgeben")
+    print("  -r  --raw         Rohausgabe")
+    print("  -u  --uncorrected Zeiten unkorrigiert ausgeben")
     sys.exit(1)
 
 
@@ -59,12 +60,19 @@ def option_roh(arg):
     return False
 
 
+def option_unkorrigiert(arg):
+    if arg.split("=")[0] == '-u' or arg.split("=")[0] == '--uncorrected':
+        return True
+    return False
+
+
 def args_auswerten(*args):
     tagesarbeitsminuten = None
     start_gegeben = True
     wert_liste = list(args)
     konformitaetsinfo = True
     roh = False
+    unkorrigiert = False
     for arg in args:
         tagesarbeitsminuten_kandidat = option_tagesarbeitsminuten(arg, TAGESARBEITSMINUTEN)
         if not tagesarbeitsminuten_kandidat is None:
@@ -83,30 +91,48 @@ def args_auswerten(*args):
             roh = True
             wert_liste.remove(arg)
             continue
+        elif option_unkorrigiert(arg):
+            unkorrigiert = True
+            wert_liste.remove(arg)
+            continue
         elif option_help(arg):
             print_help()
         elif ist_zeitstring(arg) or ist_minuten(arg):
-            return(tagesarbeitsminuten, start_gegeben, konformitaetsinfo, roh, wert_liste)
+            return(tagesarbeitsminuten, start_gegeben, konformitaetsinfo, roh, unkorrigiert, wert_liste)
         else:
             raise SyntaxError("Falsches Argument: %r" % arg)
             
 
-def resultat_wrappen(resultat, konform):
+def resultat_wrappen(resultat, konform, unkorrigiert):
     '''
     Je nach zurückgegebenen Werten, wird das Ergebnis angezeigt.
     '''
-    if len(resultat) != 5:
+
+    if len(resultat) != 6:
         raise AssertionError
+    if unkorrigiert:
+        diff = 0
+    else:
+        diff = resultat[4]
     if resultat[0]:
         print('Arbeitszeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[0])))
     if resultat[1]:
-        print('Startzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[1])))
+        print('Startzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[1] - diff)))
     if resultat[2]:
-        print('Endzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[2])))
-    if resultat[3] or resultat[3] == 0:
+        print('Endzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[2] + diff)))
+    if (resultat[3] or resultat[3] == 0) and (resultat[1] or resultat[2]):
+        print('Pausenzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[3] + diff)))
+    else:
         print('Pausenzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[3])))
-    if konform and not resultat[4]:
-        print('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
+    if konform and not resultat[5]:
+        if not resultat[0] and diff > 0:
+            print('Arbeits- und/oder Pausenzeiten an gesetzliche Regelung angepasst.')
+            print('%r Minute(n) Pause hinzugefügt.' % diff)
+        elif resultat[0] and diff > 0:
+            print('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
+            print('Zusätzliche Pause von %r Minute(n) erforderlich.' % diff)
+        else:
+            print('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
 
 
 
@@ -118,7 +144,7 @@ if __name__ == "__main__":
     uebergabe = args_auswerten(*sys.argv[1:])
     if not uebergabe:
         print_help()
-    if len(uebergabe) <= 4:
+    if len(uebergabe) <= 5:
         print("Keine Werte übergeben.")
         raise SyntaxError("Keine Werte übergeben.")
 
@@ -134,7 +160,7 @@ if __name__ == "__main__":
         strings. Deshalb muss hier zunächst konvertiert werden.
     '''
     konv_uebergabe_werte = []
-    for item in uebergabe[4]:
+    for item in uebergabe[5]:
         if ist_zeitstring(item):
             konv_uebergabe_werte.append(zeitstring_zu_zeitpunkt(item))
         else:
@@ -148,10 +174,12 @@ if __name__ == "__main__":
         resultat = auswerten(konv_uebergabe_werte, tam)
 
     if not uebergabe[3]:
-        resultat_wrappen(resultat, uebergabe[2])
+        resultat_wrappen(resultat, uebergabe[2], uebergabe[4])
     else:
         print(*resultat)
 
     sys.exit(0)
+
+
 
 

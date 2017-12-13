@@ -295,20 +295,23 @@ explicit time (no duration).')
             # Zeitpunkt ist positiv, Pausen und Arbeitszeit werden addiert
             prognose_endzeit = zeit_differenz + sum(pausen_liste) + tagesarbeitsminuten
             prognose_pausenzeit = prognose_endzeit - tagesarbeitsminuten - min(zeitpunkte_liste)
+            pausenzeit_diff = pausenzeit_korrektur(tagesarbeitsminuten, prognose_pausenzeit)
             konform = pausengesetz_vereinfacht(tagesarbeitsminuten, prognose_pausenzeit)
-            return None, None, prognose_endzeit, prognose_pausenzeit, konform
+            return None, None, prognose_endzeit, prognose_pausenzeit, pausenzeit_diff, konform
         elif not ist_zeitpunkt(gemischte_liste[0]) or not start_gegeben:
             # Zeitpunkt ist positiv, Arbeitszeit und Pausen werden subtrahiert
             prognose_startzeit = zeit_differenz - sum(pausen_liste) - tagesarbeitsminuten
             prognose_pausenzeit = max(zeitpunkte_liste) - tagesarbeitsminuten - prognose_startzeit
+            pausenzeit_diff = pausenzeit_korrektur(tagesarbeitsminuten, prognose_pausenzeit)
             konform = pausengesetz_vereinfacht(tagesarbeitsminuten, prognose_pausenzeit)
-            return None, prognose_startzeit, None, prognose_pausenzeit, konform
+            return None, prognose_startzeit, None, prognose_pausenzeit, pausenzeit_diff, konform
     else:
         # Gesamtarbeitszeit berechnen
         arbeitsminuten = zeit_differenz - sum(pausen_liste)
         pausenzeit = max(zeitpunkte_liste) - min(zeitpunkte_liste) - arbeitsminuten
+        pausenzeit_diff = pausenzeit_korrektur(arbeitsminuten, pausenzeit)
         konform = pausengesetz_vereinfacht(arbeitsminuten, pausenzeit)
-        return arbeitsminuten, None, None, pausenzeit, konform
+        return arbeitsminuten, None, None, pausenzeit, pausenzeit_diff, konform
 
 
 def pausengesetz_vereinfacht(tagesarbeitsminuten, tagespausenzeit):
@@ -334,6 +337,27 @@ def pausengesetz_vereinfacht(tagesarbeitsminuten, tagespausenzeit):
         return True
 
     return False
+
+
+def pausenzeit_korrektur(tagesarbeitsminuten, tagespausenzeit):
+    try:
+        assert isinstance(tagesarbeitsminuten, int),\
+            "%r is not an integer" % tagesarbeitsminuten
+        assert isinstance(tagespausenzeit, int),\
+            "%r is not an integer" % tagespausenzeit
+    except AssertionError:
+        raise
+
+    diff_pausenzeit = 0
+    if tagesarbeitsminuten <= 6*60:
+        diff_pausenzeit = 0
+    elif 6*60 < tagesarbeitsminuten <= 9*60 and tagespausenzeit < 30:
+        diff_pausenzeit = 30 - tagespausenzeit
+    elif 9*60 < tagesarbeitsminuten <= 10*60 and tagespausenzeit < 45:
+        diff_pausenzeit = 45 - tagespausenzeit
+
+    return diff_pausenzeit
+    
 
 
 def pausengesetz():

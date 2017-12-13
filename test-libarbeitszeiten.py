@@ -107,39 +107,42 @@ class TestStringMethods(unittest.TestCase):
             intervall_summe("['08:00', 30, '16:30']")
     def test_auswerten(self):
         self.assertEqual(auswerten([(8, 0), (12, 0), (12, 30), (16, 30)], 8*60), \
-                         (480, None, None, 30, True))
+                         (480, None, None, 30, 0, True))
         # 2 Zeitpunkte und Pausendauer:
         self.assertEqual(auswerten([(8, 0), 30, (16, 30)], 8*60), \
-                         (480, None, None, 30, True))
+                         (480, None, None, 30, 0, True))
         # 2 Zeitpunkte und 2 Pausendauern:
         self.assertEqual(auswerten([45, (8, 0), 30, (16, 30)], 8*60), \
-                         (435, None, None, 75, True))
+                         (435, None, None, 75, 0, True))
         self.assertEqual(auswerten([(8, 0), 30, (16, 30), 45], 8*60), \
-                         (435, None, None, 75, True))
+                         (435, None, None, 75, 0, True))
         # 1 Zeitpunkt und 2 Pausendauern:
         self.assertEqual(auswerten([45, 30, (16, 30)], 8*60), \
-                         (None, 7*60+15, None, 75, True))
+                         (None, 7*60+15, None, 75, 0, True))
         self.assertEqual(auswerten([45, 30, (16, 30)], 8*60, start_gegeben=False), \
-                         (None, 7*60+15, None, 75, True))
+                         (None, 7*60+15, None, 75, 0, True))
         self.assertEqual(auswerten([(8, 0), 30, 46], 8*60), \
-                         (None, None, 17*60+16, 30+46, True))
+                         (None, None, 17*60+16, 30+46, 0, True))
         # 3 Zeitpunkte:
         self.assertEqual(auswerten([(12, 0), (12, 30), (16, 30)], \
                                    8*60, start_gegeben=False), \
-                         (None, 8*60, None, 30, True))
+                         (None, 8*60, None, 30, 0, True))
         self.assertEqual(auswerten([(12, 0), (12, 30), (16, 30)], 8*60), \
-                         (None, None, 24*60, 4*60, True))
+                         (None, None, 24*60, 4*60, 0, True))
         self.assertEqual(auswerten([(8, 0), (12, 00), (12, 30)], 8*60), \
-                         (None, None, (8+8)*60+30, 30, True))
+                         (None, None, (8+8)*60+30, 30, 0, True))
         # unsortierte Zeitpunkte
         self.assertEqual(auswerten([(16, 30), (12, 0)], 8*60), \
-                         (16*60+30 - 12*60, None, None, 0, True))
+                         (16*60+30 - 12*60, None, None, 0, 0, True))
         self.assertEqual(auswerten([(16, 30), (12, 0), (12, 30)], 8*60), \
-                         (None, None, 24*60, 16*60+30-(12*60+30), True))
+                         (None, None, 24*60, 16*60+30-(12*60+30), 0, True))
         self.assertEqual(auswerten([(13, 0), (7, 0), (12, 30)], 8*60), \
-                         (None, None, 15*60+30, 30, True))
+                         (None, None, 15*60+30, 30, 0, True))
         self.assertEqual(auswerten([(13, 0), (16, 30), (12, 30)], 8*60, False), \
-                         (None, 8*60, None, 30, True))
+                         (None, 8*60, None, 30, 0, True))
+        # nicht-konforme Pausenzeiten
+        self.assertEqual(auswerten([5, (16, 30)], 8*60), \
+                         (None, 8*60+25, None, 5, 25, False))
         with self.assertRaises(AssertionError):
             auswerten("[(12,0), (12,30), (16,30)]", 50)
         with self.assertRaises(AssertionError):
