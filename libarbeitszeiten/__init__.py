@@ -348,6 +348,11 @@ def pausengesetz_vereinfacht(tagesarbeitsminuten, tagespausenzeit):
 
 
 def pausenzeit_korrektur(tagesarbeitsminuten, tagespausenzeit):
+    """
+    Hier wird die in der BRD gesetzlich vorgeschriebene Pausenzeit aus-
+    gewertet und ggf. ein Differenzwert zur gesetzlichen Regelung aus-
+    gegeben.
+    """
     try:
         assert isinstance(tagesarbeitsminuten, int),\
             "%r is not an integer" % tagesarbeitsminuten
@@ -365,7 +370,6 @@ def pausenzeit_korrektur(tagesarbeitsminuten, tagespausenzeit):
         diff_pausenzeit = 45 - tagespausenzeit
 
     return diff_pausenzeit
-    
 
 
 def pausengesetz():
