@@ -3,6 +3,7 @@
 
 import unittest
 from libarbeitszeiten import *
+#import libarbeitszeiten
 
 class TestStringMethods(unittest.TestCase):
     def test_ist_zeitstring(self):

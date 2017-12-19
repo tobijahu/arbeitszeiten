@@ -3,8 +3,10 @@
 
 import unittest
 #from libarbeitszeiten import *
+import subprocess
 
 def run_cli_programm(programm, parameter_input_string):
+#    subprocess.run([programm, parameter_input_string], shell=True, check=True)
     return subprocess.check_output([str(programm), str(parameter_input_string)])
 
 
@@ -63,4 +65,11 @@ class TestStringMethods(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+#    unittest.main()
+##    print(run_cli_programm("/home/tobias/github/arbeitszeiten/arbeit-cli", "08:00 12:00 12:30 16:00"))
+##    print(run_cli_programm("/home/tobias/github/arbeitszeiten/arbeit-cli", ["08:00", "12:00", "12:30", "16:00"]))
+#    print(run_cli_programm("/home/tobias/github/arbeitszeiten/arbeit-cli", "08:00 12:00"))
+
+    test_case = "/home/tobias/github/arbeitszeiten/arbeit-cli" + " " + "08:00 16:00"
+    print(subprocess.getoutput(test_case))
+    run_cli_programm(test_case, 'nicht das richtige ergebnis')

@@ -5,6 +5,14 @@
 Aus Zeitwerten die Arbeitszeit und Pausen berechnen
 """
 
+#
+# Variables with meta information about this module
+# This is used in order to have a run-time queryable
+# mechanism.
+#
+__version__ = 0.1
+__author__ = 'Tobias Mettenbrink'
+
 import re
 
 TAGESARBEITSMINUTEN = 8*60
