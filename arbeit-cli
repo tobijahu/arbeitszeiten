@@ -1,12 +1,28 @@
 #!/bin/python3
 # -*- coding: utf-8 -*-
 
-try:
-	from libarbeitszeiten import *
-except ImportError:
-	print('Could not import module libarbeitszeiten. Check, if libarbeitszeiten.py is available in this dir.')
+'''
+This script may be used to...
+Or to process a file with a record of start and end times as well as breaks. In a linux environment this may be called using
+cat example-arbeitszeiten.csv | awk '{ $1=""; print}' | sed -e 's/,//g' | sed -e 's/\"Gleitzeit\"//g;s/\"Feiertag\"//g;s/\"Urlaub\"//g;s/\"Krank\"//g' | python arbeit-cli
+'''
+
 
 import sys
+
+
+def eprint(*args, **kwargs):
+    '''
+    Print to stderr
+    '''
+    print(*args, file=sys.stderr, **kwargs)
+
+
+try:
+#	from libarbeitszeiten import *
+	import libarbeitszeiten as liba
+except ImportError:
+	eprint('Could not import module libarbeitszeiten. Check, if libarbeitszeiten.py is available in this dir.')
 
 
 def print_help():
@@ -22,7 +38,8 @@ def print_help():
     sys.exit(1)
 
 
-def option_tagesarbeitsminuten(arg, tagesarbeitsminuten):
+#def option_tagesarbeitsminuten(arg, tagesarbeitsminuten):
+def option_tagesarbeitsminuten(arg):
     if not arg.split("=")[0] == '-t':
         return None
     if len(arg.split("=")) > 1:
@@ -33,7 +50,8 @@ def option_tagesarbeitsminuten(arg, tagesarbeitsminuten):
         elif int(arg.split("=")[1]) > 24*60:
             raise ValueError('%r ist zu groß' % arg.split("=")[1])
         tagesarbeitsminuten = arg.split("=")[1]
-    return int(tagesarbeitsminuten)
+        return int(tagesarbeitsminuten)
+    return None
 
 
 def option_ende_gegeben(arg):
@@ -67,15 +85,16 @@ def option_unkorrigiert(arg):
 
 
 def args_auswerten(*args):
-    tagesarbeitsminuten = None
+    tagesarbeitsminuten = liba.TAGESARBEITSMINUTEN
     start_gegeben = True
     wert_liste = list(args)
     konformitaetsinfo = True
     roh = False
     unkorrigiert = False
     for arg in args:
-        tagesarbeitsminuten_kandidat = option_tagesarbeitsminuten(arg, TAGESARBEITSMINUTEN)
+        tagesarbeitsminuten_kandidat = option_tagesarbeitsminuten(arg)
         if not tagesarbeitsminuten_kandidat is None:
+#        if tagesarbeitsminuten_kandidat:
             tagesarbeitsminuten = tagesarbeitsminuten_kandidat
             wert_liste.remove(arg)
             continue
@@ -97,7 +116,7 @@ def args_auswerten(*args):
             continue
         elif option_help(arg):
             print_help()
-        elif ist_zeitstring(arg) or ist_minuten(arg):
+        elif liba.ist_zeitstring(arg) or liba.ist_minuten(arg):
             return(tagesarbeitsminuten, start_gegeben, konformitaetsinfo, roh, unkorrigiert, wert_liste)
         else:
             raise SyntaxError("Falsches Argument: %r" % arg)
@@ -115,68 +134,96 @@ def resultat_wrappen(resultat, konform, unkorrigiert):
     else:
         diff = resultat[4]
     if resultat[0]:
-        print('Arbeitszeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[0])))
+        print('Arbeitszeit: %s' % liba.zeitpunkt_zu_zeitstring(liba.minuten_zu_zeitpunkt(resultat[0])))
     if resultat[1]:
-        print('Startzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[1] - diff)))
+        print('Startzeit: %s' % liba.zeitpunkt_zu_zeitstring(liba.minuten_zu_zeitpunkt(resultat[1] - diff)))
     if resultat[2]:
-        print('Endzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[2] + diff)))
+        print('Endzeit: %s' % liba.zeitpunkt_zu_zeitstring(liba.minuten_zu_zeitpunkt(resultat[2] + diff)))
     if (resultat[3] or resultat[3] == 0) and (resultat[1] or resultat[2]):
-        print('Pausenzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[3] + diff)))
+        print('Pausenzeit: %s' % liba.zeitpunkt_zu_zeitstring(liba.minuten_zu_zeitpunkt(resultat[3] + diff)))
     else:
-        print('Pausenzeit: %s' % zeitpunkt_zu_zeitstring(minuten_zu_zeitpunkt(resultat[3])))
+        print('Pausenzeit: %s' % liba.zeitpunkt_zu_zeitstring(liba.minuten_zu_zeitpunkt(resultat[3])))
     if konform and not resultat[5]:
         if not resultat[0] and diff > 0:
-            print('Arbeits- und/oder Pausenzeiten an gesetzliche Regelung angepasst.')
-            print('%r Minute(n) Pause hinzugefügt.' % diff)
+            eprint('Arbeits- und/oder Pausenzeiten an gesetzliche Regelung angepasst.')
+            eprint('%r Minute(n) Pause hinzugefügt.' % diff)
         elif resultat[0] and diff > 0:
-            print('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
-            print('Zusätzliche Pause von %r Minute(n) erforderlich.' % diff)
+            eprint('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
+            eprint('Zusätzliche Pause von %r Minute(n) erforderlich.' % diff)
         else:
-            print('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
+            eprint('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
 
+def wert_liste_verarbeiten(eingabe):
+    konv_uebergabe_werte = []
+    for item in eingabe:
+        if liba.ist_zeitstring(item):
+            konv_uebergabe_werte.append(liba.zeitstring_zu_zeitpunkt(item))
+        else:
+            konv_uebergabe_werte.append(item)
+    return konv_uebergabe_werte
+
+def auswerten_wrapped_call(konv_uebergabe_werte, tam=liba.TAGESARBEITSMINUTEN, start_gegeben=True, konformitaetsinfo=True, roh=True, unkorrigiert=False):
+    '''
+    auswerten() erwartet als zweite Eingabe eine Liste aus integers
+    und Zeitpunkten (h,m) mit Stunden h und Minuten m. Die zeitstrings
+    in uebergabe[2] enthalten keine Zeitpunkte/Tupel, sondern zeit-
+    strings. Deshalb muss hier zunächst konvertiert werden.
+    '''
+    if start_gegeben == False:
+        resultat = liba.auswerten(konv_uebergabe_werte, tam, False)
+    else:
+        resultat = liba.auswerten(konv_uebergabe_werte, tam)
+
+    if not roh:
+        resultat_wrappen(resultat, konformitaetsinfo, unkorrigiert)
+    else:
+        print(*resultat)
+
+
+def nonblank_lines(f):
+    for l in f:
+        line = l.rstrip()
+        if line:
+            yield line
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 1:
-        raise SyntaxError("Zu wenig Argumente.")
-    # If there are no keyword arguments
-    tam = TAGESARBEITSMINUTEN
-    uebergabe = args_auswerten(*sys.argv[1:])
-    if not uebergabe:
-        print_help()
-    if len(uebergabe) <= 5:
-        print("Keine Werte übergeben.")
-        raise SyntaxError("Keine Werte übergeben.")
-
-    ''' Falls keine Gesamtarbeitszeit übergeben wurde, wird die Standardzeit
-        genommen.
     '''
-    if uebergabe[0]:
-        tam = uebergabe[0]
-
-    ''' auswerten() erwartet als zweite Eingabe eine Liste aus integers
-        und Zeitpunkten (h,m) mit Stunden h und Minuten m. Die zeitstrings
-        in uebergabe[2] enthalten keine Zeitpunkte/Tupel, sondern zeit-
-        strings. Deshalb muss hier zunächst konvertiert werden.
+    0 : tagesarbeitsminuten
+    1 : start_gegeben
+    2 : konformitaetsinfo
+    3 : roh
+    4 : unkorrigiert
+    5 : wert_liste
     '''
-    konv_uebergabe_werte = []
-    for item in uebergabe[5]:
-        if ist_zeitstring(item):
-            konv_uebergabe_werte.append(zeitstring_zu_zeitpunkt(item))
-        else:
-            konv_uebergabe_werte.append(item)
+    if sys.stdin.isatty():
+        if len(sys.argv) < 2:
+            '''
+            Wenn stdin und uebergabe leer sind, gebe die Hilfe aus.
+            '''
+            print_help()
 
-    ''' Die essentielle Auswertung wird nun durchgeführt.
-    '''
-    if uebergabe[1] == False:
-        resultat = auswerten(konv_uebergabe_werte, tam, False)
+        uebergabe = args_auswerten(*sys.argv[1:])
+
+        if len(uebergabe) <= 5:
+            print("Keine Werte übergeben.")
+#            raise SyntaxError("Keine Werte übergeben.")
+
+        if uebergabe[5]:
+            ''' 
+            Nun die essentielle Auswertung
+            '''
+            konv_uebergabe_werte = wert_liste_verarbeiten(uebergabe[5])
+            auswerten_wrapped_call(konv_uebergabe_werte, uebergabe[0], uebergabe[1], uebergabe[2], uebergabe[3], uebergabe[4])
     else:
-        resultat = auswerten(konv_uebergabe_werte, tam)
-
-    if not uebergabe[3]:
-        resultat_wrappen(resultat, uebergabe[2], uebergabe[4])
-    else:
-        print(*resultat)
+        system_arguments = sys.argv[1:]
+        for line in nonblank_lines(sys.stdin):
+            uebergabe = args_auswerten(*sys.argv[1:], *line.split())
+            konv_uebergabe_werte = wert_liste_verarbeiten(uebergabe[5])
+#            auswerten_wrapped_call(konv_uebergabe_werte, uebergabe[0], uebergabe[1], uebergabe[2], True, True)
+            auswerten_wrapped_call(konv_uebergabe_werte, uebergabe[0], uebergabe[1], True, True, True)
+#    else:
+#        raise SyntaxError('Something really strang happened')
 
     sys.exit(0)
 
