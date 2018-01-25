@@ -21,11 +21,12 @@ def eprint(*args, **kwargs):
 try:
 	import libarbeitszeiten as liba
 except ImportError:
-	eprint('Could not import module libarbeitszeiten. Check, if libarbeitszeiten.py is available in this dir.')
+	eprint('Could not import module libarbeitszeiten. \
+Check, if libarbeitszeiten.py is available in this dir.')
 
 
 def print_help():
-    print("Usage: " + sys.argv[0] + " -e -t 12:00 15:00 15:30")
+    print("Usage: " + str(sys.argv[0]) + " -e -t 12:00 15:00 15:30")
     print("  -h, --help        diese Hilfe anzeigen und beenden")
     print("      --version     Versionsinformation anzeigen und beenden")
     print("  -e                Startzeit nicht gegeben")
@@ -70,35 +71,35 @@ def args_auswerten(*args):
             continue
         elif arg.split("=")[0] == '-e':
             '''
-            option_ende_gegeben
+            option: ende_gegeben
             '''
             start_gegeben = False
             wert_liste.remove(arg)
             continue
         elif arg.split("=")[0] == '-o' or arg.split("=")[0] == '--outlaw':
             '''
-            option_keine_konformitaet_info
+            option: keine_konformitaet_info
             '''
             konformitaetsinfo = False
             wert_liste.remove(arg)
             continue
         elif arg.split("=")[0] == '-r' or arg.split("=")[0] == '--raw':
             '''
-            option roh
+            option: roh
             '''
             roh = True
             wert_liste.remove(arg)
             continue
         elif arg.split("=")[0] == '-u' or arg.split("=")[0] == '--uncorrected':
             '''
-            option unkorrigiert
+            option: unkorrigiert
             '''
             unkorrigiert = True
             wert_liste.remove(arg)
             continue
         elif arg.split("=")[0] == '-h' or arg.split("=")[0] == '--help':
             '''
-            option help
+            option: help
             '''
             print_help()
         elif liba.ist_zeitstring(arg) or liba.ist_minuten(arg):
@@ -108,15 +109,15 @@ def args_auswerten(*args):
             eprint("Falsches Argument: %r" % arg)
             sys.exit(1)
 
-def mini_wrapper( string, bezeichnung, wert ):
+def mini_wrapper(string, bezeichnung, wert):
     '''
     Bezeichnung, Zeitwert und Komma an übergebenen String weitergeben
     '''
     if string:
         string += ', '
     string += str(bezeichnung)
-    tage, minuten = divmod( wert, 24*60 )
-    string += str(liba.zeitpunkt_zu_zeitstring( liba.minuten_zu_zeitpunkt( minuten ) ))
+    tage, minuten = divmod(wert, 24*60)
+    string += str(liba.zeitpunkt_zu_zeitstring(liba.minuten_zu_zeitpunkt(minuten)))
     if tage == 1:
         string += ' (n. T.)'
     elif tage > 0:
@@ -137,15 +138,15 @@ def resultat_wrappen(resultat, konform, unkorrigiert):
         diff = resultat[4]
     string = ''
     if resultat[0]:
-        string = mini_wrapper( string, 'Arbeitszeit: ', resultat[0] )
+        string = mini_wrapper(string, 'Arbeitszeit: ', resultat[0])
     if resultat[1]:
-        string = mini_wrapper( string, 'Startzeit: ', resultat[1] - diff )
+        string = mini_wrapper(string, 'Startzeit: ', resultat[1] - diff)
     if resultat[2]:
-        string = mini_wrapper( string, 'Endzeit: ', resultat[2] + diff )
+        string = mini_wrapper(string, 'Endzeit: ', resultat[2] + diff)
     if (resultat[3] or resultat[3] == 0) and (resultat[1] or resultat[2]):
-        string = mini_wrapper( string, 'Pausenzeit: ', resultat[3] + diff )
+        string = mini_wrapper(string, 'Pausenzeit: ', resultat[3] + diff)
     else:
-        string = mini_wrapper( string, 'Pausenzeit: ', resultat[3] )
+        string = mini_wrapper(string, 'Pausenzeit: ', resultat[3])
     print(string)
     if konform and not resultat[5]:
         if not resultat[0] and diff > 0:
@@ -186,14 +187,13 @@ def auswerten_wrapped_call(konv_uebergabe_werte, tam=liba.TAGESARBEITSMINUTEN, s
         print(*resultat)
 
 
-def nonblank_lines(f):
+def nonblank_lines(untruncated_input):
     '''
     Leere Zeilen aus Eingabe überspringen -- nur nicht-leere Zeilen 
     übergeben.
     '''
-    for l in f:
-        line = l.rstrip()
-        if line:
+    for line in untruncated_input:
+        if line.rstrip():
             yield line
 
 
@@ -213,23 +213,29 @@ if __name__ == "__main__":
             '''
             print_help()
 
-        uebergabe = args_auswerten(*sys.argv[1:])
+        try:
+            tagesarbeitsminuten, start_gegeben, konformitaetsinfo, roh, unkorrigiert, wert_liste = args_auswerten(*sys.argv[1:])
+        except Exception:
+            eprint("Keine Werte übergeben.")
 
-        if len(uebergabe) <= 5:
-            print("Keine Werte übergeben.")
-
-        if uebergabe[5]:
+        if wert_liste:
             ''' 
             Nun die essentielle Auswertung
             '''
-            konv_uebergabe_werte = wert_liste_verarbeiten(uebergabe[5])
-            auswerten_wrapped_call(konv_uebergabe_werte, uebergabe[0], uebergabe[1], uebergabe[2], uebergabe[3], uebergabe[4])
+            auswerten_wrapped_call(wert_liste_verarbeiten(wert_liste), tagesarbeitsminuten, start_gegeben, konformitaetsinfo, roh, unkorrigiert)
     else:
         system_arguments = sys.argv[1:]
         for line in nonblank_lines(sys.stdin):
-            uebergabe = args_auswerten(*sys.argv[1:], *line.split())
-            konv_uebergabe_werte = wert_liste_verarbeiten(uebergabe[5])
-            auswerten_wrapped_call(konv_uebergabe_werte, uebergabe[0], uebergabe[1], True, True, True)
+            try:
+                tagesarbeitsminuten, start_gegeben, konformitaetsinfo, roh, unkorrigiert, wert_liste = args_auswerten(*sys.argv[1:], *line.split())
+            except Exception:
+                eprint("Fehler in Argumente-Auswertung. ")
+            konformitaetsinfo, roh, unkorrigiert = True, True, True
+            try:
+                konv_uebergabe_werte = wert_liste_verarbeiten(wert_liste)
+            except Exception:
+                eprint("Fehler in Argumente-Auswertung. ")
+            auswerten_wrapped_call(konv_uebergabe_werte, tagesarbeitsminuten, start_gegeben, konformitaetsinfo, roh, unkorrigiert)
 
     sys.exit(0)
 
