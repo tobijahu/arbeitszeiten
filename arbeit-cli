@@ -19,7 +19,6 @@ def eprint(*args, **kwargs):
 
 
 try:
-#	from libarbeitszeiten import *
 	import libarbeitszeiten as liba
 except ImportError:
 	eprint('Could not import module libarbeitszeiten. Check, if libarbeitszeiten.py is available in this dir.')
@@ -38,50 +37,22 @@ def print_help():
     sys.exit(1)
 
 
-#def option_tagesarbeitsminuten(arg, tagesarbeitsminuten):
 def option_tagesarbeitsminuten(arg):
     if not arg.split("=")[0] == '-t':
         return None
     if len(arg.split("=")) > 1:
         if arg.split("=")[1] == '':
-            raise ValueError
+            eprint('Kein Minutenwert spezifiziert.')
+            sys.exit(1)
         elif int(arg.split("=")[1]) < 0:
-            raise ValueError('%r ist zu klein' % arg.split("=")[1])
+            eprint('%r ist zu klein' % arg.split("=")[1])
+            sys.exit(1)
         elif int(arg.split("=")[1]) > 24*60:
-            raise ValueError('%r ist zu groß' % arg.split("=")[1])
+            eprint('%r ist zu groß' % arg.split("=")[1])
+            sys.exit(1)
         tagesarbeitsminuten = arg.split("=")[1]
         return int(tagesarbeitsminuten)
     return None
-
-
-def option_ende_gegeben(arg):
-    if arg.split("=")[0] == '-e':
-        return True
-    return False
-
-
-def option_help(arg):
-    if arg.split("=")[0] == '-h' or arg.split("=")[0] == '--help':
-        return True
-    return False
-
-
-def option_keine_konformitaet_info(arg):
-    if arg.split("=")[0] == '-o' or arg.split("=")[0] == '--outlaw':
-        return True
-    return False
-
-
-def option_roh(arg):
-    if arg.split("=")[0] == '-r' or arg.split("=")[0] == '--raw':
-        return True
-    return False
-
-
-def option_unkorrigiert(arg):
-    if arg.split("=")[0] == '-u' or arg.split("=")[0] == '--uncorrected':
-        return True
-    return False
 
 
 def args_auswerten(*args):
@@ -94,33 +65,64 @@ def args_auswerten(*args):
     for arg in args:
         tagesarbeitsminuten_kandidat = option_tagesarbeitsminuten(arg)
         if not tagesarbeitsminuten_kandidat is None:
-#        if tagesarbeitsminuten_kandidat:
             tagesarbeitsminuten = tagesarbeitsminuten_kandidat
             wert_liste.remove(arg)
             continue
-        elif option_ende_gegeben(arg):
+        elif arg.split("=")[0] == '-e':
+            '''
+            option_ende_gegeben
+            '''
             start_gegeben = False
             wert_liste.remove(arg)
             continue
-        elif option_keine_konformitaet_info(arg):
+        elif arg.split("=")[0] == '-o' or arg.split("=")[0] == '--outlaw':
+            '''
+            option_keine_konformitaet_info
+            '''
             konformitaetsinfo = False
             wert_liste.remove(arg)
             continue
-        elif option_roh(arg):
+        elif arg.split("=")[0] == '-r' or arg.split("=")[0] == '--raw':
+            '''
+            option roh
+            '''
             roh = True
             wert_liste.remove(arg)
             continue
-        elif option_unkorrigiert(arg):
+        elif arg.split("=")[0] == '-u' or arg.split("=")[0] == '--uncorrected':
+            '''
+            option unkorrigiert
+            '''
             unkorrigiert = True
             wert_liste.remove(arg)
             continue
-        elif option_help(arg):
+        elif arg.split("=")[0] == '-h' or arg.split("=")[0] == '--help':
+            '''
+            option help
+            '''
             print_help()
         elif liba.ist_zeitstring(arg) or liba.ist_minuten(arg):
             return(tagesarbeitsminuten, start_gegeben, konformitaetsinfo, roh, unkorrigiert, wert_liste)
         else:
-            raise SyntaxError("Falsches Argument: %r" % arg)
-            
+#            raise SyntaxError("Falsches Argument: %r" % arg)
+            eprint("Falsches Argument: %r" % arg)
+            sys.exit(1)
+
+def mini_wrapper( string, bezeichnung, wert ):
+    '''
+    Bezeichnung, Zeitwert und Komma an übergebenen String weitergeben
+    '''
+    if string:
+        string += ', '
+    string += str(bezeichnung)
+    tage, minuten = divmod( wert, 24*60 )
+    string += str(liba.zeitpunkt_zu_zeitstring( liba.minuten_zu_zeitpunkt( minuten ) ))
+    if tage == 1:
+        string += ' (n. T.)'
+    elif tage > 0:
+        string += ' (i. ' + str(tage) + ' T.)'
+    return string
+
 
 def resultat_wrappen(resultat, konform, unkorrigiert):
     '''
@@ -133,16 +135,18 @@ def resultat_wrappen(resultat, konform, unkorrigiert):
         diff = 0
     else:
         diff = resultat[4]
+    string = ''
     if resultat[0]:
-        print('Arbeitszeit: %s' % liba.zeitpunkt_zu_zeitstring(liba.minuten_zu_zeitpunkt(resultat[0])))
+        string = mini_wrapper( string, 'Arbeitszeit: ', resultat[0] )
     if resultat[1]:
-        print('Startzeit: %s' % liba.zeitpunkt_zu_zeitstring(liba.minuten_zu_zeitpunkt(resultat[1] - diff)))
+        string = mini_wrapper( string, 'Startzeit: ', resultat[1] - diff )
     if resultat[2]:
-        print('Endzeit: %s' % liba.zeitpunkt_zu_zeitstring(liba.minuten_zu_zeitpunkt(resultat[2] + diff)))
+        string = mini_wrapper( string, 'Endzeit: ', resultat[2] + diff )
     if (resultat[3] or resultat[3] == 0) and (resultat[1] or resultat[2]):
-        print('Pausenzeit: %s' % liba.zeitpunkt_zu_zeitstring(liba.minuten_zu_zeitpunkt(resultat[3] + diff)))
+        string = mini_wrapper( string, 'Pausenzeit: ', resultat[3] + diff )
     else:
-        print('Pausenzeit: %s' % liba.zeitpunkt_zu_zeitstring(liba.minuten_zu_zeitpunkt(resultat[3])))
+        string = mini_wrapper( string, 'Pausenzeit: ', resultat[3] )
+    print(string)
     if konform and not resultat[5]:
         if not resultat[0] and diff > 0:
             eprint('Arbeits- und/oder Pausenzeiten an gesetzliche Regelung angepasst.')
@@ -153,14 +157,19 @@ def resultat_wrappen(resultat, konform, unkorrigiert):
         else:
             eprint('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
 
-def wert_liste_verarbeiten(eingabe):
+
+def wert_liste_verarbeiten(int_liste):
+    '''
+    Konvertiert 
+    '''
     konv_uebergabe_werte = []
-    for item in eingabe:
-        if liba.ist_zeitstring(item):
-            konv_uebergabe_werte.append(liba.zeitstring_zu_zeitpunkt(item))
+    for t_in_min in int_liste:
+        if liba.ist_zeitstring(t_in_min):
+            konv_uebergabe_werte.append(liba.zeitstring_zu_zeitpunkt(t_in_min))
         else:
-            konv_uebergabe_werte.append(item)
+            konv_uebergabe_werte.append(t_in_min)
     return konv_uebergabe_werte
+
 
 def auswerten_wrapped_call(konv_uebergabe_werte, tam=liba.TAGESARBEITSMINUTEN, start_gegeben=True, konformitaetsinfo=True, roh=True, unkorrigiert=False):
     '''
@@ -169,10 +178,7 @@ def auswerten_wrapped_call(konv_uebergabe_werte, tam=liba.TAGESARBEITSMINUTEN, s
     in uebergabe[2] enthalten keine Zeitpunkte/Tupel, sondern zeit-
     strings. Deshalb muss hier zunächst konvertiert werden.
     '''
-    if start_gegeben == False:
-        resultat = liba.auswerten(konv_uebergabe_werte, tam, False)
-    else:
-        resultat = liba.auswerten(konv_uebergabe_werte, tam)
+    resultat = liba.auswerten(konv_uebergabe_werte, tam, start_gegeben)
 
     if not roh:
         resultat_wrappen(resultat, konformitaetsinfo, unkorrigiert)
@@ -181,6 +187,10 @@ def auswerten_wrapped_call(konv_uebergabe_werte, tam=liba.TAGESARBEITSMINUTEN, s
 
 
 def nonblank_lines(f):
+    '''
+    Leere Zeilen aus Eingabe überspringen -- nur nicht-leere Zeilen 
+    übergeben.
+    '''
     for l in f:
         line = l.rstrip()
         if line:
@@ -207,7 +217,6 @@ if __name__ == "__main__":
 
         if len(uebergabe) <= 5:
             print("Keine Werte übergeben.")
-#            raise SyntaxError("Keine Werte übergeben.")
 
         if uebergabe[5]:
             ''' 
@@ -220,10 +229,7 @@ if __name__ == "__main__":
         for line in nonblank_lines(sys.stdin):
             uebergabe = args_auswerten(*sys.argv[1:], *line.split())
             konv_uebergabe_werte = wert_liste_verarbeiten(uebergabe[5])
-#            auswerten_wrapped_call(konv_uebergabe_werte, uebergabe[0], uebergabe[1], uebergabe[2], True, True)
             auswerten_wrapped_call(konv_uebergabe_werte, uebergabe[0], uebergabe[1], True, True, True)
-#    else:
-#        raise SyntaxError('Something really strang happened')
 
     sys.exit(0)
 
