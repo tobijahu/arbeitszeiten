@@ -64,8 +64,12 @@ class TestStringMethods(unittest.TestCase):
             zeitpunkt_zu_minuten("22:01")
     def test_minuten_zu_zeitpunkt(self):
         self.assertEqual(minuten_zu_zeitpunkt(135), (2, 15))
-        a = minuten_zu_zeitpunkt(523.7249)
-        self.assertEqual((round(a[0],4),round(a[1],4)), (8, 43.7249))
+        minuten_gleitkommazahl = minuten_zu_zeitpunkt(523.7249)
+        self.assertEqual((round(minuten_gleitkommazahl[0], 4),\
+                          round(minuten_gleitkommazahl[1], 4)\
+                         ),\
+                         (8, 43.7249)\
+                        )
         with self.assertRaises(ValueError):
             minuten_zu_zeitpunkt(25*60)
     def test_zeitpunkt_zu_zeitstring(self):
