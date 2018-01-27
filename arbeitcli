@@ -3,8 +3,11 @@
 
 '''
 This script may be used to...
-Or to process a file with a record of start and end times as well as breaks. In a linux environment this may be called using
-cat example-arbeitszeiten.csv | awk '{ $1=""; print}' | sed -e 's/,//g' | sed -e 's/\"Gleitzeit\"//g;s/\"Feiertag\"//g;s/\"Urlaub\"//g;s/\"Krank\"//g' | python arbeit-cli
+Or to process a file with a record of start and end times as well as breaks.
+In a linux environment this may be called using
+cat example-arbeitszeiten.csv | awk '{ $1=""; print}' | sed -e 's/,//g' \
+| sed -e 's/\"Gleitzeit\"//g;s/\"Feiertag\"//g;s/\"Urlaub\"//g;s/\"Krank\"//g' \
+| python arbeit-cli
 '''
 
 
@@ -19,13 +22,25 @@ def eprint(*args, **kwargs):
 
 
 try:
-	import libarbeitszeiten as liba
+    import libarbeitszeiten as liba
 except ImportError:
-	eprint('Could not import module libarbeitszeiten. \
+    eprint('Could not import module libarbeitszeiten. \
 Check, if libarbeitszeiten.py is available in this dir.')
 
 
+KONFIGURATION = {'tagesarbeitsminuten' : liba.TAGESARBEITSMINUTEN,
+                 'start_gegeben' : True,
+                 'konformitaetsinfo' : True,
+                 'roh' : False,
+                 'unkorrigiert' : False,
+                 'wert_liste' : None
+                }
+
+
 def print_help():
+    '''
+    Info über die Benutzung der Command Line Interfaces (CLI)
+    '''
     print("Usage: " + str(sys.argv[0]) + " -e -t 12:00 15:00 15:30")
     print("  -h, --help        diese Hilfe anzeigen und beenden")
     print("      --version     Versionsinformation anzeigen und beenden")
@@ -39,6 +54,10 @@ def print_help():
 
 
 def option_tagesarbeitsminuten(arg):
+    '''
+    Auswertung der Option -t. Die Nutzung dieser Option sieht die Übergabe
+    eines Wertes vor, der hier ausgewertet wird.
+    '''
     if not arg.split("=")[0] == '-t':
         return None
     if len(arg.split("=")) > 1:
@@ -57,57 +76,43 @@ def option_tagesarbeitsminuten(arg):
 
 
 def args_auswerten(*args):
-    tagesarbeitsminuten = liba.TAGESARBEITSMINUTEN
-    start_gegeben = True
+    '''
+    Alle Übergabeparameter aus args auswerten und auf Richtigkeit überprüfen.
+    '''
+    resultat = KONFIGURATION
     wert_liste = list(args)
-    konformitaetsinfo = True
-    roh = False
-    unkorrigiert = False
     for arg in args:
         tagesarbeitsminuten_kandidat = option_tagesarbeitsminuten(arg)
         if not tagesarbeitsminuten_kandidat is None:
-            tagesarbeitsminuten = tagesarbeitsminuten_kandidat
+            resultat['tagesarbeitsminuten'] = tagesarbeitsminuten_kandidat
             wert_liste.remove(arg)
             continue
         elif arg.split("=")[0] == '-e':
-            '''
-            option: ende_gegeben
-            '''
-            start_gegeben = False
+            resultat['start_gegeben'] = False
             wert_liste.remove(arg)
             continue
         elif arg.split("=")[0] == '-o' or arg.split("=")[0] == '--outlaw':
-            '''
-            option: keine_konformitaet_info
-            '''
-            konformitaetsinfo = False
+            resultat['konformitaetsinfo'] = False
             wert_liste.remove(arg)
             continue
         elif arg.split("=")[0] == '-r' or arg.split("=")[0] == '--raw':
-            '''
-            option: roh
-            '''
-            roh = True
+            resultat['roh'] = True
             wert_liste.remove(arg)
             continue
         elif arg.split("=")[0] == '-u' or arg.split("=")[0] == '--uncorrected':
-            '''
-            option: unkorrigiert
-            '''
-            unkorrigiert = True
+            resultat['unkorrigiert'] = True
             wert_liste.remove(arg)
             continue
         elif arg.split("=")[0] == '-h' or arg.split("=")[0] == '--help':
-            '''
-            option: help
-            '''
             print_help()
         elif liba.ist_zeitstring(arg) or liba.ist_minuten(arg):
-            return(tagesarbeitsminuten, start_gegeben, konformitaetsinfo, roh, unkorrigiert, wert_liste)
+            resultat['wert_liste'] = wert_liste
+            return resultat
         else:
-#            raise SyntaxError("Falsches Argument: %r" % arg)
             eprint("Falsches Argument: %r" % arg)
             sys.exit(1)
+    return None
+
 
 def mini_wrapper(string, bezeichnung, wert):
     '''
@@ -161,7 +166,7 @@ def resultat_wrappen(resultat, konform, unkorrigiert):
 
 def wert_liste_verarbeiten(int_liste):
     '''
-    Konvertiert 
+    Konvertiert
     '''
     konv_uebergabe_werte = []
     for t_in_min in int_liste:
@@ -172,73 +177,66 @@ def wert_liste_verarbeiten(int_liste):
     return konv_uebergabe_werte
 
 
-def auswerten_wrapped_call(konv_uebergabe_werte, tam=liba.TAGESARBEITSMINUTEN, start_gegeben=True, konformitaetsinfo=True, roh=True, unkorrigiert=False):
+def auswerten_wrapped_call(parameter):
     '''
     auswerten() erwartet als zweite Eingabe eine Liste aus integers
     und Zeitpunkten (h,m) mit Stunden h und Minuten m. Die zeitstrings
     in uebergabe[2] enthalten keine Zeitpunkte/Tupel, sondern zeit-
     strings. Deshalb muss hier zunächst konvertiert werden.
     '''
-    resultat = liba.auswerten(konv_uebergabe_werte, tam, start_gegeben)
+    try:
+        assert isinstance(parameter, dict),\
+            "%r is not a dict" % parameter
+    except AssertionError:
+        raise
 
-    if not roh:
-        resultat_wrappen(resultat, konformitaetsinfo, unkorrigiert)
+    resultat = liba.auswerten(parameter['wert_liste'],\
+                              parameter['tagesarbeitsminuten'],\
+                              parameter['start_gegeben']
+                             )
+
+    if not parameter['roh']:
+        resultat_wrappen(resultat, \
+                         parameter['konformitaetsinfo'], \
+                         parameter['unkorrigiert']\
+                        )
     else:
         print(*resultat)
 
 
-def nonblank_lines(untruncated_input):
+def keine_leeren_zeilen(eingabe_mit_leeren_zeilen):
     '''
-    Leere Zeilen aus Eingabe überspringen -- nur nicht-leere Zeilen 
+    Leere Zeilen aus Eingabe überspringen -- nur nicht-leere Zeilen
     übergeben.
     '''
-    for line in untruncated_input:
-        if line.rstrip():
-            yield line
+    for zeile in eingabe_mit_leeren_zeilen:
+        if zeile.rstrip(): # Zeile leer?
+            yield zeile
 
 
 if __name__ == "__main__":
-    '''
-    0 : tagesarbeitsminuten
-    1 : start_gegeben
-    2 : konformitaetsinfo
-    3 : roh
-    4 : unkorrigiert
-    5 : wert_liste
-    '''
     if sys.stdin.isatty():
         if len(sys.argv) < 2:
-            '''
-            Wenn stdin und uebergabe leer sind, gebe die Hilfe aus.
-            '''
-            print_help()
+            print_help()# Wenn stdin und uebergabe leer sind, gebe die Hilfe aus.
 
-        try:
-            tagesarbeitsminuten, start_gegeben, konformitaetsinfo, roh, unkorrigiert, wert_liste = args_auswerten(*sys.argv[1:])
-        except Exception:
-            eprint("Keine Werte übergeben.")
+        parameter_dict = args_auswerten(*sys.argv[1:])
 
-        if wert_liste:
-            ''' 
-            Nun die essentielle Auswertung
-            '''
-            auswerten_wrapped_call(wert_liste_verarbeiten(wert_liste), tagesarbeitsminuten, start_gegeben, konformitaetsinfo, roh, unkorrigiert)
+        parameter_dict['wert_liste'] = wert_liste_verarbeiten(parameter_dict['wert_liste'])
+        auswerten_wrapped_call(parameter_dict)
+
     else:
-        system_arguments = sys.argv[1:]
-        for line in nonblank_lines(sys.stdin):
+        for nicht_leere_zeile in keine_leeren_zeilen(sys.stdin):
             try:
-                tagesarbeitsminuten, start_gegeben, konformitaetsinfo, roh, unkorrigiert, wert_liste = args_auswerten(*sys.argv[1:], *line.split())
+                parameter_dict = args_auswerten(*sys.argv[1:], *nicht_leere_zeile.split())
             except Exception:
                 eprint("Fehler in Argumente-Auswertung. ")
-            konformitaetsinfo, roh, unkorrigiert = True, True, True
+            parameter_dict['konformitaetsinfo'] = True
+            parameter_dict['roh'] = True
+            parameter_dict['unkorrigiert'] = True
             try:
-                konv_uebergabe_werte = wert_liste_verarbeiten(wert_liste)
+                parameter_dict['wert_liste'] = wert_liste_verarbeiten(parameter_dict['wert_liste'])
             except Exception:
                 eprint("Fehler in Argumente-Auswertung. ")
-            auswerten_wrapped_call(konv_uebergabe_werte, tagesarbeitsminuten, start_gegeben, konformitaetsinfo, roh, unkorrigiert)
+            auswerten_wrapped_call(parameter_dict)
 
     sys.exit(0)
-
-
-
-
