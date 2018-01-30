@@ -12,6 +12,7 @@ cat example-arbeitszeiten.csv | awk '{ $1=""; print}' | sed -e 's/,//g' \
 
 
 import sys
+import argparse
 
 
 def eprint(*args, **kwargs):
@@ -35,6 +36,30 @@ KONFIGURATION = {'tagesarbeitsminuten' : liba.TAGESARBEITSMINUTEN,
                  'unkorrigiert' : False,
                  'wert_liste' : None
                 }
+
+def create_parser():
+    parser = argparse.ArgumentParser(
+#        description='Ping a number of servers in AWS based on tags'
+        description='Berechne Arbeitszeiten oder schlage gesetzeskonforme Arbeitszeiten vor'
+    )
+
+    parser.add_argument(
+        'zeitwerte', nargs='+',
+        help='Zeitwerte als Berechnungsgrundlage'
+    )
+
+    parser.add_argument(
+        '-h', '--help', type=str, required=False,
+        help='Gib Hilfeübersicht aus'
+    )
+
+    parser.add_argument(
+        '-v', '--version', type=str, required=False,
+        help=''
+    )
+
+    return parser
+
 
 
 def print_help():
