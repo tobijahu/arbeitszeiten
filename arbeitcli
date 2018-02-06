@@ -10,8 +10,8 @@ cat example-arbeitszeiten.csv | awk '{ $1=""; print}' | sed -e 's/,//g' \
 | python arbeit-cli
 '''
 
-
 import sys
+import os.path
 import argparse
 
 
@@ -22,60 +22,77 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
+def is_valid_file(parser_instanz, arg):
+    '''
+    Prüfe, ob arg eine valide Datei ist
+    '''
+    if not os.path.exists(arg):
+        parser_instanz.error("The file %s does not exist!" % arg)
+    return open(arg, 'r')  # return an open file handle
+
+
 try:
     import libarbeitszeiten as liba
 except ImportError:
     eprint('Could not import module libarbeitszeiten. \
 Check, if libarbeitszeiten.py is available in this dir.')
 
-
-KONFIGURATION = {'tagesarbeitsminuten' : liba.TAGESARBEITSMINUTEN,
-                 'start_gegeben' : True,
-                 'konformitaetsinfo' : True,
-                 'roh' : False,
-                 'unkorrigiert' : False,
-                 'wert_liste' : None
-                }
+__version__ = '0.1'
 
 def create_parser():
-    parser = argparse.ArgumentParser(
-#        description='Ping a number of servers in AWS based on tags'
-        description='Berechne Arbeitszeiten oder schlage gesetzeskonforme Arbeitszeiten vor'
-    )
-
-    parser.add_argument(
-        'zeitwerte', nargs='+',
-        help='Zeitwerte als Berechnungsgrundlage'
-    )
-
-    parser.add_argument(
-        '-h', '--help', type=str, required=False,
-        help='Gib Hilfeübersicht aus'
-    )
-
-    parser.add_argument(
-        '-v', '--version', type=str, required=False,
-        help=''
-    )
-
-    return parser
-
-
-
-def print_help():
     '''
-    Info über die Benutzung der Command Line Interfaces (CLI)
+    Parser  für CLI bauen
     '''
-    print("Usage: " + str(sys.argv[0]) + " -e -t 12:00 15:00 15:30")
-    print("  -h, --help        diese Hilfe anzeigen und beenden")
-    print("      --version     Versionsinformation anzeigen und beenden")
-    print("  -e                Startzeit nicht gegeben")
-    print("  -t                ")
-    print("  -t=5              Gesamte Arbeitszeit des Tages in Minuten")
-    print("  -o  --outlaw      Info zu nicht-gesetzeskonformen Eingaben ausgeben")
-    print("  -r  --raw         Rohausgabe")
-    print("  -u  --uncorrected Zeiten unkorrigiert ausgeben")
-    sys.exit(1)
+    parser_objekt = argparse.ArgumentParser(
+        description='Berechne Arbeitszeiten oder schlage gesetzeskonforme Arbeitszeiten vor',
+        prog='arbeitcli',
+        prefix_chars='-/')
+
+    parser_objekt.add_argument(
+        'zeitwerte', nargs='*',
+        default=sys.stdin,
+        metavar="Zeitwerte",
+        help='Zeitwerte als Berechnungsgrundlage')
+
+    parser_objekt.add_argument(
+        '--datei',
+        dest='dateiname',
+        required=False,
+        metavar="Dateiname",
+        type=lambda x: is_valid_file(parser_objekt, x),
+        help='Datei oder stdin als Eingabemethode für Zeitwerte')
+
+    parser_objekt.add_argument(
+        '-t', type=str, required=False,
+        default=liba.TAGESARBEITSMINUTEN,
+        help='Gesamte Arbeitszeit des Tages in Minuten')
+
+    parser_objekt.add_argument(
+        '-e', '--ende', dest='start_gegeben', action='store_const',
+        const=False, default=True,
+        help='Endezeit gegeben / Startzeit nicht gegeben')
+
+    parser_objekt.add_argument(
+        '-o', '--outlaw', dest='konformitaetsinfo', action='store_const',
+        const=False, default=True,
+        help='Info zu nicht-gesetzeskonformen Eingaben ausgeben')
+
+    parser_objekt.add_argument(
+        '-r', '--raw', dest='roh', action='store_const',
+        const=True, default=False,
+        help='Rohausgabe')
+
+    parser_objekt.add_argument(
+        '-u', '--uncorrected', dest='unkorrigiert', action='store_const',
+        const=True, default=False,
+        help='Zeiten unkorrigiert ausgeben')
+
+    parser_objekt.add_argument(
+        '-v', '--version', dest='version', action='store_const',
+        const=True, default=False,
+        help='Versionsinformation anzeigen und beenden')
+
+    return parser_objekt
 
 
 def option_tagesarbeitsminuten(arg):
@@ -100,45 +117,6 @@ def option_tagesarbeitsminuten(arg):
     return None
 
 
-def args_auswerten(*args):
-    '''
-    Alle Übergabeparameter aus args auswerten und auf Richtigkeit überprüfen.
-    '''
-    resultat = KONFIGURATION
-    wert_liste = list(args)
-    for arg in args:
-        tagesarbeitsminuten_kandidat = option_tagesarbeitsminuten(arg)
-        if not tagesarbeitsminuten_kandidat is None:
-            resultat['tagesarbeitsminuten'] = tagesarbeitsminuten_kandidat
-            wert_liste.remove(arg)
-            continue
-        elif arg.split("=")[0] == '-e':
-            resultat['start_gegeben'] = False
-            wert_liste.remove(arg)
-            continue
-        elif arg.split("=")[0] == '-o' or arg.split("=")[0] == '--outlaw':
-            resultat['konformitaetsinfo'] = False
-            wert_liste.remove(arg)
-            continue
-        elif arg.split("=")[0] == '-r' or arg.split("=")[0] == '--raw':
-            resultat['roh'] = True
-            wert_liste.remove(arg)
-            continue
-        elif arg.split("=")[0] == '-u' or arg.split("=")[0] == '--uncorrected':
-            resultat['unkorrigiert'] = True
-            wert_liste.remove(arg)
-            continue
-        elif arg.split("=")[0] == '-h' or arg.split("=")[0] == '--help':
-            print_help()
-        elif liba.ist_zeitstring(arg) or liba.ist_minuten(arg):
-            resultat['wert_liste'] = wert_liste
-            return resultat
-        else:
-            eprint("Falsches Argument: %r" % arg)
-            sys.exit(1)
-    return None
-
-
 def mini_wrapper(string, bezeichnung, wert):
     '''
     Bezeichnung, Zeitwert und Komma an übergebenen String weitergeben
@@ -147,7 +125,7 @@ def mini_wrapper(string, bezeichnung, wert):
         string += ', '
     string += str(bezeichnung)
     tage, minuten = divmod(wert, 24*60)
-    string += str(liba.zeitpunkt_zu_zeitstring(liba.minuten_zu_zeitpunkt(minuten)))
+    string += liba.minuten_zu_zeitstring(minuten)
     if tage == 1:
         string += ' (n. T.)'
     elif tage > 0:
@@ -189,79 +167,77 @@ def resultat_wrappen(resultat, konform, unkorrigiert):
             eprint('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
 
 
-def wert_liste_verarbeiten(int_liste):
-    '''
-    Konvertiert
-    '''
-    konv_uebergabe_werte = []
-    for t_in_min in int_liste:
-        if liba.ist_zeitstring(t_in_min):
-            konv_uebergabe_werte.append(liba.zeitstring_zu_zeitpunkt(t_in_min))
+def command_line_interface(zeitwerte=None, t=None, start_gegeben=None, roh=None, version=None, \
+                           dateiname=None, konformitaetsinfo=None, unkorrigiert=None):
+    if version:
+        print(__version__)
+
+    elif dateiname:
+        # Dateieingabe verarbeiten. argumente.zeitwerte werden dabei verworfen.
+        if zeitwerte:
+            eprint('Ignoriere ', *zeitwerte)
+        for zeile in dateiname:
+            if not zeile.rstrip():
+                print()
+            elif zeile.lstrip('#') != zeile:
+                pass
+            else:
+                print(*liba.auswerten(zeile.split(),\
+                                      t,\
+                                      start_gegeben))
+
+
+    elif zeitwerte:
+        if roh:
+            print(*liba.auswerten(zeitwerte,\
+                                  t,\
+                                  start_gegeben))
         else:
-            konv_uebergabe_werte.append(t_in_min)
-    return konv_uebergabe_werte
-
-
-def auswerten_wrapped_call(parameter):
-    '''
-    auswerten() erwartet als zweite Eingabe eine Liste aus integers
-    und Zeitpunkten (h,m) mit Stunden h und Minuten m. Die zeitstrings
-    in uebergabe[2] enthalten keine Zeitpunkte/Tupel, sondern zeit-
-    strings. Deshalb muss hier zunächst konvertiert werden.
-    '''
-    try:
-        assert isinstance(parameter, dict),\
-            "%r is not a dict" % parameter
-    except AssertionError:
-        raise
-
-    resultat = liba.auswerten(parameter['wert_liste'],\
-                              parameter['tagesarbeitsminuten'],\
-                              parameter['start_gegeben']
-                             )
-
-    if not parameter['roh']:
-        resultat_wrappen(resultat, \
-                         parameter['konformitaetsinfo'], \
-                         parameter['unkorrigiert']\
-                        )
-    else:
-        print(*resultat)
-
-
-def keine_leeren_zeilen(eingabe_mit_leeren_zeilen):
-    '''
-    Leere Zeilen aus Eingabe überspringen -- nur nicht-leere Zeilen
-    übergeben.
-    '''
-    for zeile in eingabe_mit_leeren_zeilen:
-        if zeile.rstrip(): # Zeile leer?
-            yield zeile
+            resultat_wrappen(liba.auswerten(zeitwerte,\
+                                            t,\
+                                            start_gegeben), \
+                             konformitaetsinfo, \
+                             unkorrigiert)
+    return
 
 
 if __name__ == "__main__":
-    if sys.stdin.isatty():
-        if len(sys.argv) < 2:
-            print_help()# Wenn stdin und uebergabe leer sind, gebe die Hilfe aus.
+    NEUE_PARSER_INSTANZ = create_parser()
+    GEPARSTE_ARGUMENTE = NEUE_PARSER_INSTANZ.parse_args()
 
-        parameter_dict = args_auswerten(*sys.argv[1:])
+    command_line_interface(GEPARSTE_ARGUMENTE.zeitwerte, GEPARSTE_ARGUMENTE.t, GEPARSTE_ARGUMENTE.start_gegeben, GEPARSTE_ARGUMENTE.roh, GEPARSTE_ARGUMENTE.version, \
+                           GEPARSTE_ARGUMENTE.dateiname, GEPARSTE_ARGUMENTE.konformitaetsinfo, GEPARSTE_ARGUMENTE.unkorrigiert)
 
-        parameter_dict['wert_liste'] = wert_liste_verarbeiten(parameter_dict['wert_liste'])
-        auswerten_wrapped_call(parameter_dict)
+'''
+    if GEPARSTE_ARGUMENTE.version:
+        print(__version__)
 
-    else:
-        for nicht_leere_zeile in keine_leeren_zeilen(sys.stdin):
-            try:
-                parameter_dict = args_auswerten(*sys.argv[1:], *nicht_leere_zeile.split())
-            except Exception:
-                eprint("Fehler in Argumente-Auswertung. ")
-            parameter_dict['konformitaetsinfo'] = True
-            parameter_dict['roh'] = True
-            parameter_dict['unkorrigiert'] = True
-            try:
-                parameter_dict['wert_liste'] = wert_liste_verarbeiten(parameter_dict['wert_liste'])
-            except Exception:
-                eprint("Fehler in Argumente-Auswertung. ")
-            auswerten_wrapped_call(parameter_dict)
+    elif GEPARSTE_ARGUMENTE.dateiname:
+        # Dateieingabe verarbeiten. argumente.zeitwerte werden dabei verworfen.
+        if GEPARSTE_ARGUMENTE.zeitwerte:
+            eprint('Ignoriere ', *GEPARSTE_ARGUMENTE.zeitwerte)
+        for zeile in GEPARSTE_ARGUMENTE.dateiname:
+            if not zeile.rstrip():
+                print()
+            elif zeile.lstrip('#') != zeile:
+                pass
+            else:
+                print(*liba.auswerten(zeile.split(),\
+                                      GEPARSTE_ARGUMENTE.t,\
+                                      GEPARSTE_ARGUMENTE.start_gegeben))
+
+
+    elif GEPARSTE_ARGUMENTE.zeitwerte:
+        if GEPARSTE_ARGUMENTE.roh:
+            print(*liba.auswerten(GEPARSTE_ARGUMENTE.zeitwerte,\
+                                  GEPARSTE_ARGUMENTE.t,\
+                                  GEPARSTE_ARGUMENTE.start_gegeben))
+        else:
+            resultat_wrappen(liba.auswerten(GEPARSTE_ARGUMENTE.zeitwerte,\
+                                            GEPARSTE_ARGUMENTE.t,\
+                                            GEPARSTE_ARGUMENTE.start_gegeben), \
+                             GEPARSTE_ARGUMENTE.konformitaetsinfo, \
+                             GEPARSTE_ARGUMENTE.unkorrigiert)
 
     sys.exit(0)
+'''

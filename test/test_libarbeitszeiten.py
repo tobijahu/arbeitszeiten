@@ -18,11 +18,12 @@ class TestStringMethods(unittest.TestCase):
         Äquivalenzklassen: 1) t < 0:0 (negativ)
                            2) 0:0 <= t <= 24:00 (positiv)
                            3) t > 24:00 (negativ)
-                           4) Ausdrücke ohne ':' (negativ)
-                           5) Ausdrücke mit mehr als einem ':' (negativ)
-                           6) Ausdrücke mit Zeichen nicht aus '0-9:-' (negativ)
-                           7) nicht-String-Ausdrücke (negativ)
+        Weitere            *) Ausdrücke ohne ':' (negativ)
+                           *) Ausdrücke mit mehr als einem ':' (negativ)
+                           *) Ausdrücke mit Zeichen nicht aus '0-9:-' (negativ)
+                           *) nicht-String-Ausdrücke (negativ)
         '''
+        # Äquivalenzklassen / Grenzwertanalyse
         self.assertFalse(liba.ist_zeitstring('-1:01'))
         self.assertFalse(liba.ist_zeitstring('-0:01'))
         self.assertFalse(liba.ist_zeitstring('-1:0'))
@@ -33,134 +34,93 @@ class TestStringMethods(unittest.TestCase):
         self.assertFalse(liba.ist_zeitstring('24:01'))
         self.assertFalse(liba.ist_zeitstring('23:61'))
         self.assertFalse(liba.ist_zeitstring('25:00'))
+        # Interessante Werte
         self.assertTrue(liba.ist_zeitstring('09:55'))
         self.assertTrue(liba.ist_zeitstring('9:5'))
         self.assertTrue(liba.ist_zeitstring('19:5'))
         self.assertFalse(liba.ist_zeitstring('99:99'))
+        self.assertFalse(liba.ist_zeitstring('-:1'))
+        # Ausdrücke ohne ':'
         self.assertFalse(liba.ist_zeitstring('24'))
+        # Ausdrücke mit mehr als einem ':'
         self.assertFalse(liba.ist_zeitstring('12:34:56'))
+        # Ausdrücke mit Zeichen nicht aus '0-9:-'
         self.assertFalse(liba.ist_zeitstring('2:22a'))
+        # nicht-String-Ausdrücke
         self.assertFalse(liba.ist_zeitstring(90))
         self.assertFalse(liba.ist_zeitstring(60))
-        self.assertFalse(liba.ist_zeitstring('-:1'))
-
-    def test_ist_zeitpunkt(self):
-        '''
-        Positiv- und Negativtests von liba.ist_zeitstring()
-        Äquivalenzklassen: 1) (h, m) < (0, 0) (negativ)
-                           2) (0, 0) <= (h, m) <= (24, 00) (positiv)
-                           3) (h, m) > (24, 00) (negativ)
-                           4) Einzelwerte (negativ)
-                           5) Tripel (negativ)
-        '''
-        self.assertFalse(liba.ist_zeitpunkt((-1, 0)))
-        self.assertFalse(liba.ist_zeitpunkt((0, -1)))
-        self.assertTrue(liba.ist_zeitpunkt((0, 0)))
-        self.assertTrue(liba.ist_zeitpunkt((0, 1)))
-        self.assertTrue(liba.ist_zeitpunkt((1, 0)))
-        self.assertTrue(liba.ist_zeitpunkt((23, 59)))
-        self.assertTrue(liba.ist_zeitpunkt((24, 0)))
-        self.assertTrue(liba.ist_zeitpunkt((23, 60)))
-        self.assertFalse(liba.ist_zeitpunkt((24, 1)))
-        self.assertFalse(liba.ist_zeitpunkt((25, 0)))
-        self.assertFalse(liba.ist_zeitpunkt((23, 61)))
-        self.assertFalse(liba.ist_zeitpunkt((24)))
-        self.assertFalse(liba.ist_zeitpunkt((12, 34, 56)))
 
     def test_ist_minuten(self):
         '''
         Äquivalenzklassen: 1) t < 0 (negativ)
                            2) t >= 0 (positiv)
-                           3) Interessante Werte (positiv)
-                           4) Alles noch einmal als Strings (negativ + positiv)
-                           5) Nicht-erlaubte Zeichen (negativ)
+                           3) Alles noch einmal als Strings (negativ + positiv)
+        Weitere:           *) Interessante Werte (positiv)
+                           *) Nicht-erlaubte Zeichen (negativ)
         '''
-        self.assertTrue(liba.ist_minuten(-1))
+        self.assertFalse(liba.ist_minuten(-1))
         self.assertTrue(liba.ist_minuten(0))
         self.assertTrue(liba.ist_minuten(1))
+        self.assertFalse(liba.ist_minuten('-1'))
+        self.assertTrue(liba.ist_minuten('0'))
+        self.assertTrue(liba.ist_minuten('1'))
+        # Interessante Werte:
         self.assertTrue(liba.ist_minuten(59))
         self.assertTrue(liba.ist_minuten(60))
         self.assertTrue(liba.ist_minuten(61))
         self.assertTrue(liba.ist_minuten(24*60))
         self.assertTrue(liba.ist_minuten(24*60+1))
-        self.assertFalse(liba.ist_minuten('-1'))
-        self.assertTrue(liba.ist_minuten('0'))
-        self.assertTrue(liba.ist_minuten('-0'))
-        self.assertTrue(liba.ist_minuten('1'))
         self.assertTrue(liba.ist_minuten('60'))
         self.assertTrue(liba.ist_minuten('61'))
         self.assertTrue(liba.ist_minuten('1440'))
         self.assertTrue(liba.ist_minuten('1441'))
-        self.assertFalse(liba.ist_minuten('-1j'))
+        # Nicht-erlaubte Zeichen
+        self.assertFalse(liba.ist_minuten('-0'))
         self.assertFalse(liba.ist_minuten('-1:0'))
-    def test_zeitstring_zu_zeitpunkt(self):
+        self.assertFalse(liba.ist_minuten('-1j'))
+
+    def test_zeitstring_zu_minuten(self):
         '''
         Äquivalenzklassen: 1) hh:mm < 00:00 (negativ)
                            2) 00:00 <= hh:mm <= 24:00 (positiv)
                            3) hh:mm > 24:00 (negativ)
-                           4) Tripel (negativ)
-                           5) Nicht-erlaubte Zeichen (negativ)
+        Weitere            *) Tripel (negativ)
+                           *) Nicht-erlaubte Zeichen (negativ)
         '''
         with self.assertRaises(ValueError):
-            liba.zeitstring_zu_zeitpunkt("-01:00")
+            liba.zeitstring_zu_minuten("-01:00")
         with self.assertRaises(ValueError):
-            liba.zeitstring_zu_zeitpunkt("-1:00")
+            liba.zeitstring_zu_minuten("-1:00")
         with self.assertRaises(ValueError):
-            liba.zeitstring_zu_zeitpunkt("00:-01")
+            liba.zeitstring_zu_minuten("00:-01")
         with self.assertRaises(ValueError):
-            liba.zeitstring_zu_zeitpunkt("00:-1")
-        self.assertEqual(liba.zeitstring_zu_zeitpunkt("00:00"), (0, 0))
-        self.assertEqual(liba.zeitstring_zu_zeitpunkt("00:01"), (0, 1))
-        self.assertEqual(liba.zeitstring_zu_zeitpunkt("01:00"), (1, 0))
-        self.assertEqual(liba.zeitstring_zu_zeitpunkt("23:59"), (23, 59))
-        self.assertEqual(liba.zeitstring_zu_zeitpunkt("24:00"), (24, 0))
-        self.assertEqual(liba.zeitstring_zu_zeitpunkt("23:60"), (23, 60))
+            liba.zeitstring_zu_minuten("00:-1")
+        self.assertEqual(liba.zeitstring_zu_minuten("00:00"), 0)
+        self.assertEqual(liba.zeitstring_zu_minuten("00:01"), 1)
+        self.assertEqual(liba.zeitstring_zu_minuten("01:00"), 1*60)
+        self.assertEqual(liba.zeitstring_zu_minuten("23:59"), 23*60+59)
+        self.assertEqual(liba.zeitstring_zu_minuten("24:00"), 24*60)
+        self.assertEqual(liba.zeitstring_zu_minuten("23:60"), 23*60+60)
         with self.assertRaises(ValueError):
-            liba.zeitstring_zu_zeitpunkt("24:01")
+            liba.zeitstring_zu_minuten("24:01")
         with self.assertRaises(ValueError):
-            liba.zeitstring_zu_zeitpunkt("25:00")
+            liba.zeitstring_zu_minuten("25:00")
         with self.assertRaises(ValueError):
-            liba.zeitstring_zu_zeitpunkt("25:01")
+            liba.zeitstring_zu_minuten("25:01")
+        # Tripel:
         with self.assertRaises(ValueError):
-            liba.zeitstring_zu_zeitpunkt("01:01:06")
+            liba.zeitstring_zu_minuten("01:01:06")
+        # Nicht-erlaubte Zeichen:
         with self.assertRaises(ValueError):
-            liba.zeitstring_zu_zeitpunkt("08:2a")
+            liba.zeitstring_zu_minuten("08:2a")
 
-    def test_zeitpunkt_zu_minuten(self):
-        '''
-        Äquivalenzklassen: 1) 
-        '''
-        self.assertEqual(liba.zeitpunkt_zu_minuten((8, 21)), 8*60+21)
-        self.assertEqual(liba.zeitpunkt_zu_minuten((24, 0)), 24*60)
-        self.assertEqual(liba.zeitpunkt_zu_minuten((1, 1)), 61)
-        with self.assertRaises(AssertionError):
-            liba.zeitpunkt_zu_minuten(40)
-        with self.assertRaises(AssertionError):
-            liba.zeitpunkt_zu_minuten("22:01")
-
-    def test_minuten_zu_zeitpunkt(self):
-        self.assertEqual(liba.minuten_zu_zeitpunkt(135), (2, 15))
-        minuten_gleitkommazahl = liba.minuten_zu_zeitpunkt(523.7249)
-        self.assertEqual((round(minuten_gleitkommazahl[0], 4),\
-                          round(minuten_gleitkommazahl[1], 4)\
-                         ),\
-                         (8, 43.7249)\
-                        )
+    def test_minuten_zu_zeitstring(self):
+        self.assertEqual(liba.minuten_zu_zeitstring(2*60+15), "02:15")
+        self.assertEqual(liba.minuten_zu_zeitstring(0), "00:00")
+        self.assertEqual(liba.minuten_zu_zeitstring(24*60), "24:00")
+        self.assertEqual(liba.minuten_zu_zeitstring(523.7249), "08:44")
         with self.assertRaises(ValueError):
-            liba.minuten_zu_zeitpunkt(25*60)
-
-    def test_zeitpunkt_zu_zeitstring(self):
-        self.assertEqual(liba.zeitpunkt_zu_zeitstring((2, 15)), "02:15")
-        self.assertEqual(liba.zeitpunkt_zu_zeitstring((0, 0)), "00:00")
-        self.assertEqual(liba.zeitpunkt_zu_zeitstring((24, 0)), "24:00")
-        with self.assertRaises(AssertionError):
-            liba.zeitpunkt_zu_zeitstring((2, '15a'))
-        with self.assertRaises(AssertionError):
-            liba.zeitpunkt_zu_zeitstring((24, 1))
-        with self.assertRaises(AssertionError):
-            liba.zeitpunkt_zu_zeitstring((25, 1))
-        with self.assertRaises(AssertionError):
-            liba.zeitpunkt_zu_zeitstring((22, 61))
+            liba.minuten_zu_zeitstring(25*60)
 
     def test_filter_zpkte_pausen(self):
         self.assertEqual(liba.filter_zpkte_pausen( \
@@ -172,7 +132,7 @@ class TestStringMethods(unittest.TestCase):
             liba.filter_zpkte_pausen([(8, 15), 55, (12, 15), (22, 66), (13, 0), 30])
 
     def test_intervall_summe(self):
-#        12:00 - 08:00 + 16:30 - 12:30 - 30min
+        # 12:00 - 08:00 + 16:30 - 12:30 - 30min
         self.assertEqual(liba.intervall_summe( \
                          [8*60, 12*60, 12*60+30, 16*60+30]), \
                          8*60)

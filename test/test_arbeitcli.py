@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from ping import create_parser, ping
+import libarbeitszeiten as liba
+#from ping import create_parser, ping
+from arbeitcli import create_parser, ping
 
-#from libarbeitszeiten import *
 import subprocess
 
 class CommandLineTestCase(TestCase):
@@ -17,13 +18,24 @@ class CommandLineTestCase(TestCase):
         cls.parser = parser
 
 
-class PingTestCase(CommandLineTestCase):
+class ArbeitCLITestCase(CommandLineTestCase):
     def test_with_empty_args():
         """
         User passes no args, should fail with SystemExit
         """                                    
         with self.assertRaises(SystemExit):
             self.parser.parse_args([])
+
+    def test_arbeitszeit_berechnen():
+        """
+        
+        """
+        command_line_interface(GEPARSTE_ARGUMENTE.zeitwerte, GEPARSTE_ARGUMENTE.t, GEPARSTE_ARGUMENTE.start_gegeben, GEPARSTE_ARGUMENTE.roh, GEPARSTE_ARGUMENTE.version, \
+                               GEPARSTE_ARGUMENTE.dateiname, GEPARSTE_ARGUMENTE.konformitaetsinfo, GEPARSTE_ARGUMENTE.unkorrigiert)
+        args = self.parser.parse_args(['-r', '8:0', '30', '1', '20:30'])
+        result = ping(args.zeitwerte, args.region, args.ami)
+        self.assertIsNotNone(result)
+        # Do some othe assertions on the result
 
     def test_db_servers_ubuntu_ami_in_australia():
         """
@@ -34,6 +46,9 @@ class PingTestCase(CommandLineTestCase):
         self.assertIsNotNone(result)
         # Do some othe assertions on the result
 
+'''
+http://dustinrcollins.com/testing-python-command-line-apps
+'''
 
 """
 def run_cli_programm(programm, parameter_input_string):
@@ -106,5 +121,3 @@ if __name__ == '__main__':
     run_cli_programm(test_case, 'nicht das richtige ergebnis')
 
 """
-
-x = [1,2,3]

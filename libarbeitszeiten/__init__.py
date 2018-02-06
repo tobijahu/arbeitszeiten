@@ -66,46 +66,14 @@ def ist_minuten(zeit_wert):
     return False
 
 
-def ist_zeitpunkt(integer_tupel):
+def zeitstring_zu_minuten(zeit_string):
     """
-    Ist die Eingabe ein gültiges Tupel aus Stunden und Minuten?
-    Diese Funktion erwartet eine Eingabe in Form eines Zahlen-
-    tupels mit zwei positiven Werten. D.h. für 08:00 Uhr das
-    Tupel (8,0).
-    Die Funktion gibt einen boolschen Wert zurück.
+    Konvertiere einen Zeit-String im Format "hh:mm" zu einem Integer, wobei hh für Stunde und mm
+    für Minute. hh kann Werte von 00 bis 24 und mm Werte von 00 bis 59 annehmen.
+    Also z.B. "11:03" zu 663.
     """
     try:
-        assert isinstance(integer_tupel, tuple),\
-            "%r is not a tuple" % integer_tupel
-        assert isinstance(integer_tupel[0], (int, float)),\
-            "%r is not an integer" % integer_tupel[0]
-        assert isinstance(integer_tupel[1], (int, float)),\
-            "%r is not an integer" % integer_tupel[1]
-    except AssertionError:
-        return False
-
-    if len(integer_tupel) != 2:
-        return False
-
-    if not 0 <= integer_tupel[0] <= 24:
-        return False
-
-    if (not 0 <= integer_tupel[1] <= 59) or (integer_tupel[1] != 0 and integer_tupel[0] == 24):
-        return False
-
-    return True
-
-
-def zeitstring_zu_zeitpunkt(zeit_string):
-    """
-    Konvertiere einen Zeit-String im Format "hh:mm" zu einem Integer
-    Wertetupel im Format (hh,mm), wobei hh für Stunde und mm für Minute.
-    hh kann Werte von 00 bis 24 und mm Werte von 00 bis 59 annehmen
-    Also z.B. "11:03" zu 663
-    """
-    try:
-        assert isinstance(zeit_string, str),\
-            "%r is not a tuple" % zeit_string
+        assert isinstance(zeit_string, str), "%r is not a tuple" % zeit_string
     except AssertionError:
         raise
 
@@ -119,24 +87,10 @@ def zeitstring_zu_zeitpunkt(zeit_string):
     except:
         raise ValueError("%r or %r are not base 10 integers." % (stunden, minuten))
 
-    return (stunden, minuten)
+    return stunden*60 + minuten
 
 
-def zeitpunkt_zu_minuten(tupel):
-    """
-    Der übergebene Zeitwert-Tupel (hh,mm) wird hier in einen
-    Minuten-Zeitwert umgerechnet.
-    """
-    try:
-        assert ist_zeitpunkt(tupel),\
-            "%r is not a tupel (hh,mm)" % tupel
-    except AssertionError:
-        raise
-
-    return tupel[0] * 60 + tupel[1]
-
-
-def minuten_zu_zeitpunkt(minuten):
+def minuten_zu_zeitstring(minuten):
     """
     Diese Funktion konvertiert einen ganzzahligen Wert in ein paar von Zahlen,
     das im Format eines Tupels (h,m) ist.
@@ -145,34 +99,18 @@ def minuten_zu_zeitpunkt(minuten):
     eines Tages.
     """
     try:
-        assert isinstance(minuten, (int, float)),\
-            "%r is not an integer or float" % minuten
+        assert isinstance(minuten, (int, float)), "%r is not an integer or float" % minuten
     except AssertionError:
         raise
 
     if not 0 <= minuten <= 24*60:
         raise ValueError("%r is no proper value for minutes." % minuten)
 
-    return (int(minuten / 60), minuten % 60)
-
-
-def zeitpunkt_zu_zeitstring(tupel):
-    """
-    Die Funktion erwartet ein Tupel aus zwei ganzen Zahlen >= 0 (d.h. (8,30) für
-    08:30 Uhr) und konvertiert dieses zu einem String im Format "hh:mm" (das ent-
-    spräche im vorangegangenen Beispiel also "08:30").
-    """
-    try:
-        assert ist_zeitpunkt(tupel),\
-            "input is not a tupel (hh,mm)"
-    except AssertionError:
-        raise
-
-    stunden = tupel[0]
+    stunden = int(minuten / 60)
     if stunden < 10:
         stunden = "0" + str(stunden)
 
-    minuten = tupel[1]
+    minuten = minuten % 60
     if minuten < 10:
         minuten = "0" + str(minuten)
 
@@ -194,10 +132,8 @@ def filter_zpkte_pausen(liste_gemischt):
     zeitpunkt_liste = []
     pausen_liste = []
     for item in liste_gemischt:
-        if ist_zeitpunkt(item):
-            zeitpunkt_liste.append(int(zeitpunkt_zu_minuten(item)))
-        elif ist_zeitstring(item):
-            zeitpunkt_liste.append(int(zeitpunkt_zu_minuten(zeitstring_zu_zeitpunkt(item))))
+        if ist_zeitstring(item):
+            zeitpunkt_liste.append(int(zeitstring_zu_minuten(item)))
         elif ist_minuten(item):
             pausen_liste.append(int(item))
         else:
@@ -277,12 +213,6 @@ def auswerten(gemischte_liste, tagesarbeitsminuten=None, start_gegeben=True, sor
     except AssertionError:
         raise
 
-    zeitpunkte_liste, pausen_liste = None, None
-
-#    try:
-#        zeitpunkte_liste, pausen_liste = filter_zpkte_pausen(gemischte_liste)
-#    except TypeError:
-#        print('Input is not of the right type.')
     zeitpunkte_liste, pausen_liste = filter_zpkte_pausen(gemischte_liste)
 
     if not zeitpunkte_liste:
@@ -293,33 +223,31 @@ explicit time (no duration).')
         zeitpunkte_liste = sorted(zeitpunkte_liste)
 
     zeit_differenz = intervall_summe(zeitpunkte_liste)
+
+    startzeit = None
+    endzeit = None
+
     if len(zeitpunkte_liste) % 2 == 1:
         if not tagesarbeitsminuten:
             raise AssertionError('Eingabewert für Tagesarbeitszeit ist %s' % tagesarbeitsminuten)
         if int(tagesarbeitsminuten) < 0:
             raise ValueError('Negativer Eingabewert für Tagesarbeitszeit: %s' % tagesarbeitsminuten)
         # End- bzw. Startzeitpunkt n
-        if ist_zeitpunkt(gemischte_liste[0]) and start_gegeben:
+        if ist_zeitstring(gemischte_liste[0]) and start_gegeben:
             # Zeitpunkt ist positiv, Pausen und Arbeitszeit werden addiert
-            prognose_endzeit = zeit_differenz + sum(pausen_liste) + tagesarbeitsminuten
-            prognose_pausenzeit = prognose_endzeit - tagesarbeitsminuten - min(zeitpunkte_liste)
-            pausenzeit_diff = pausenzeit_korrektur(tagesarbeitsminuten, prognose_pausenzeit)
-            konform = pausengesetz_vereinfacht(tagesarbeitsminuten, prognose_pausenzeit)
-            return None, None, prognose_endzeit, prognose_pausenzeit, pausenzeit_diff, konform
-        elif not ist_zeitpunkt(gemischte_liste[0]) or not start_gegeben:
+            endzeit = zeit_differenz + sum(pausen_liste) + tagesarbeitsminuten
+            pausenzeit = endzeit - tagesarbeitsminuten - min(zeitpunkte_liste) #prognose
+        elif not ist_zeitstring(gemischte_liste[0]) or not start_gegeben:
             # Zeitpunkt ist positiv, Arbeitszeit und Pausen werden subtrahiert
-            prognose_startzeit = zeit_differenz - sum(pausen_liste) - tagesarbeitsminuten
-            prognose_pausenzeit = max(zeitpunkte_liste) - tagesarbeitsminuten - prognose_startzeit
-            pausenzeit_diff = pausenzeit_korrektur(tagesarbeitsminuten, prognose_pausenzeit)
-            konform = pausengesetz_vereinfacht(tagesarbeitsminuten, prognose_pausenzeit)
-            return None, prognose_startzeit, None, prognose_pausenzeit, pausenzeit_diff, konform
+            startzeit = zeit_differenz - sum(pausen_liste) - tagesarbeitsminuten
+            pausenzeit = max(zeitpunkte_liste) - tagesarbeitsminuten - startzeit #prognose
     else:
         # Gesamtarbeitszeit berechnen
-        arbeitsminuten = zeit_differenz - sum(pausen_liste)
-        pausenzeit = max(zeitpunkte_liste) - min(zeitpunkte_liste) - arbeitsminuten
-        pausenzeit_diff = pausenzeit_korrektur(arbeitsminuten, pausenzeit)
-        konform = pausengesetz_vereinfacht(arbeitsminuten, pausenzeit)
-        return arbeitsminuten, None, None, pausenzeit, pausenzeit_diff, konform
+        tagesarbeitsminuten = zeit_differenz - sum(pausen_liste)
+        pausenzeit = max(zeitpunkte_liste) - min(zeitpunkte_liste) - tagesarbeitsminuten
+    pausenzeit_diff = pausenzeit_korrektur(tagesarbeitsminuten, pausenzeit)
+    konform = pausengesetz_vereinfacht(tagesarbeitsminuten, pausenzeit)
+    return tagesarbeitsminuten, startzeit, endzeit, pausenzeit, pausenzeit_diff, konform
 
 
 def pausengesetz_vereinfacht(tagesarbeitsminuten, tagespausenzeit):
