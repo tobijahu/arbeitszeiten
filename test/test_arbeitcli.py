@@ -4,7 +4,7 @@
 import unittest
 import libarbeitszeiten as liba
 #from ping import create_parser, ping
-from arbeitcli import create_parser, ping
+from arbeitcli import create_parser, command_line_interface
 
 import subprocess
 
