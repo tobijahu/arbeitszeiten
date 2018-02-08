@@ -23,6 +23,13 @@ class TestStringMethods(unittest.TestCase):
                            *) Ausdrücke mit Zeichen nicht aus '0-9:-' (negativ)
                            *) nicht-String-Ausdrücke (negativ)
         '''
+        # Äquivalenzklassen
+        self.assertTrue(liba.ist_zeitstring('09:55'))
+        self.assertTrue(liba.ist_zeitstring('9:5'))
+        self.assertTrue(liba.ist_zeitstring('19:5'))
+        self.assertFalse(liba.ist_zeitstring('99:99'))
+        self.assertFalse(liba.ist_zeitstring('-09:05'))
+        self.assertFalse(liba.ist_zeitstring('-:1'))
         # Grenzwertanalyse
         self.assertFalse(liba.ist_zeitstring('-1:01'))
         self.assertFalse(liba.ist_zeitstring('-0:01'))
@@ -34,13 +41,6 @@ class TestStringMethods(unittest.TestCase):
         self.assertFalse(liba.ist_zeitstring('24:01'))
         self.assertFalse(liba.ist_zeitstring('23:61'))
         self.assertFalse(liba.ist_zeitstring('25:00'))
-        # Äquivalenzklassen
-        self.assertTrue(liba.ist_zeitstring('09:55'))
-        self.assertTrue(liba.ist_zeitstring('9:5'))
-        self.assertTrue(liba.ist_zeitstring('19:5'))
-        self.assertFalse(liba.ist_zeitstring('99:99'))
-        self.assertFalse(liba.ist_zeitstring('-09:05'))
-        self.assertFalse(liba.ist_zeitstring('-:1'))
         # Ausdrücke ohne ':'
         self.assertFalse(liba.ist_zeitstring('24'))
         # Ausdrücke mit mehr als einem ':'
@@ -88,11 +88,13 @@ class TestStringMethods(unittest.TestCase):
         Weitere            *) Tripel (negativ)
                            *) Nicht-erlaubte Zeichen (negativ)
         '''
-        self.assertEqual(liba.zeitstring_zu_minuten("00:00"), 0)
-        self.assertEqual(liba.zeitstring_zu_minuten("00:01"), 1)
-        self.assertEqual(liba.zeitstring_zu_minuten("01:00"), 1*60)
-        self.assertEqual(liba.zeitstring_zu_minuten("23:59"), 23*60+59)
-        self.assertEqual(liba.zeitstring_zu_minuten("24:00"), 24*60)
+        # Äquivalenzklassen
+        with self.assertRaises(ValueError):
+            liba.zeitstring_zu_minuten("-12:34")
+        self.assertEqual(liba.zeitstring_zu_minuten("07:45"), 7*60+45)
+        with self.assertRaises(ValueError):
+            liba.zeitstring_zu_minuten("45:31")
+        # Grenzwertanalyse
         with self.assertRaises(ValueError):
             liba.zeitstring_zu_minuten("-01:00")
         with self.assertRaises(ValueError):
@@ -101,6 +103,11 @@ class TestStringMethods(unittest.TestCase):
             liba.zeitstring_zu_minuten("00:-01")
         with self.assertRaises(ValueError):
             liba.zeitstring_zu_minuten("00:-1")
+        self.assertEqual(liba.zeitstring_zu_minuten("00:00"), 0)
+        self.assertEqual(liba.zeitstring_zu_minuten("00:01"), 1)
+        self.assertEqual(liba.zeitstring_zu_minuten("01:00"), 1*60)
+        self.assertEqual(liba.zeitstring_zu_minuten("23:59"), 23*60+59)
+        self.assertEqual(liba.zeitstring_zu_minuten("24:00"), 24*60)
         with self.assertRaises(ValueError):
             liba.zeitstring_zu_minuten("23:60")
         with self.assertRaises(ValueError):
@@ -115,14 +122,28 @@ class TestStringMethods(unittest.TestCase):
         # Nicht-erlaubte Zeichen:
         with self.assertRaises(ValueError):
             liba.zeitstring_zu_minuten("08:2a")
+        with self.assertRaises(AssertionError):
+            liba.zeitstring_zu_minuten(8)
 
     def test_minuten_zu_zeitstring(self):
+        # Äquivalenzklassen
         self.assertEqual(liba.minuten_zu_zeitstring(2*60+15), "02:15")
-        self.assertEqual(liba.minuten_zu_zeitstring(0), "00:00")
-        self.assertEqual(liba.minuten_zu_zeitstring(24*60), "24:00")
         self.assertEqual(liba.minuten_zu_zeitstring(523.7249), "08:44")
         with self.assertRaises(ValueError):
+            liba.minuten_zu_zeitstring(-12*60-15)
+        with self.assertRaises(ValueError):
             liba.minuten_zu_zeitstring(25*60)
+        # Grenzwertanalyse
+        with self.assertRaises(ValueError):
+            liba.minuten_zu_zeitstring(-1)
+        self.assertEqual(liba.minuten_zu_zeitstring(0), "00:00")
+        self.assertEqual(liba.minuten_zu_zeitstring(1), "00:01")
+        self.assertEqual(liba.minuten_zu_zeitstring(24*60), "24:00")
+        with self.assertRaises(ValueError):
+            liba.minuten_zu_zeitstring(24*60+1)
+        # Nicht erlaubte Eingaben:
+        with self.assertRaises(AssertionError):
+            liba.minuten_zu_zeitstring("24*60+1")
 
     def test_filter_zpkte_pausen(self):
         self.assertEqual(liba.filter_zpkte_pausen( \
@@ -149,6 +170,13 @@ class TestStringMethods(unittest.TestCase):
         self.assertEqual(liba.intervall_summe( \
                          [12*60, 12*60+30, 16*60+30]), \
                          (12*60)-(12*60+30)+(16*60+30))
+        # Grenzwertanalyse
+        self.assertEqual(liba.intervall_summe([-1]), -1)
+        self.assertEqual(liba.intervall_summe([0]), 0)
+        self.assertEqual(liba.intervall_summe([24*60]), 24*60)
+        self.assertEqual(liba.intervall_summe([24*60+1]), 24*60+1)
+        # Weitere tests
+        self.assertEqual(liba.intervall_summe([23*60, 5*60]), -23*60+5*60)
         with self.assertRaises(AssertionError):
             liba.intervall_summe("['08:00', 30, '16:30']")
 
