@@ -13,6 +13,17 @@ cat example-arbeitszeiten.csv | awk '{ $1=""; print}' | sed -e 's/,//g' \
 import sys
 import os.path
 import argparse
+import time
+
+
+try:
+    import libarbeitszeiten as liba
+except ImportError:
+    eprint('Could not import module libarbeitszeiten. \
+Check, if libarbeitszeiten.py is available in this dir.')
+
+__author__ = 'Tobias Mettenbrink'
+__version__ = '0.1'
 
 
 def eprint(*args, **kwargs):
@@ -31,14 +42,6 @@ def is_valid_file(parser_instanz, arg):
     return open(arg, 'r')  # return an open file handle
 
 
-try:
-    import libarbeitszeiten as liba
-except ImportError:
-    eprint('Could not import module libarbeitszeiten. \
-Check, if libarbeitszeiten.py is available in this dir.')
-
-__version__ = '0.1'
-
 def create_parser():
     '''
     Parser  für CLI bauen
@@ -52,15 +55,7 @@ def create_parser():
         'zeitwerte', nargs='*',
         default=sys.stdin,
         metavar="Zeitwerte",
-        help='Zeitwerte als Berechnungsgrundlage')
-
-    parser_objekt.add_argument(
-        '--datei',
-        dest='dateiname',
-        required=False,
-        metavar="Dateiname",
-        type=lambda x: is_valid_file(parser_objekt, x),
-        help='Datei oder stdin als Eingabemethode für Zeitwerte')
+        help='Zeitwerte als Berechnungsgrundlage. Argumente im hh:mm Format werden als Zeitpunkte und ganzzahlige Werte als Pausenzeiten intepretiert. Eingaben über stdin in diesen Formaten werden verarbeitet, wenn keine Werte als Argumente übergeben werden. Bei fehlender Eingabe wird der gegenwärtige Zeitpunkt als Startzeit gewählt.')
 
     parser_objekt.add_argument(
         '-t', type=str, required=False,
@@ -168,15 +163,16 @@ def resultat_wrappen(resultat, konform, unkorrigiert):
 
 
 def command_line_interface(zeitwerte=None, t=None, start_gegeben=None, roh=None, version=None, \
-                           dateiname=None, konformitaetsinfo=None, unkorrigiert=None):
+                           konformitaetsinfo=None, unkorrigiert=None):
+    '''
+    Aufruf zur Verarbeitetung eingegebener Werte.
+    '''
     if version:
         print(__version__)
 
-    elif dateiname:
-        # Dateieingabe verarbeiten. argumente.zeitwerte werden dabei verworfen.
-        if zeitwerte:
-            eprint('Ignoriere ', *zeitwerte)
-        for zeile in dateiname:
+
+    elif not sys.stdin.isatty():
+        for zeile in zeitwerte:
             if not zeile.rstrip():
                 print()
             elif zeile.lstrip('#') != zeile:
@@ -185,9 +181,9 @@ def command_line_interface(zeitwerte=None, t=None, start_gegeben=None, roh=None,
                 print(*liba.auswerten(zeile.split(),\
                                       t,\
                                       start_gegeben))
-
-
-    elif zeitwerte:
+    else:
+        if sys.stdin.isatty():
+            zeitwerte = [str(time.localtime().tm_hour) + ':' + str(time.localtime().tm_min)]
         if roh:
             print(*liba.auswerten(zeitwerte,\
                                   t,\
@@ -205,39 +201,8 @@ if __name__ == "__main__":
     NEUE_PARSER_INSTANZ = create_parser()
     GEPARSTE_ARGUMENTE = NEUE_PARSER_INSTANZ.parse_args()
 
-    command_line_interface(GEPARSTE_ARGUMENTE.zeitwerte, GEPARSTE_ARGUMENTE.t, GEPARSTE_ARGUMENTE.start_gegeben, GEPARSTE_ARGUMENTE.roh, GEPARSTE_ARGUMENTE.version, \
-                           GEPARSTE_ARGUMENTE.dateiname, GEPARSTE_ARGUMENTE.konformitaetsinfo, GEPARSTE_ARGUMENTE.unkorrigiert)
-
-'''
-    if GEPARSTE_ARGUMENTE.version:
-        print(__version__)
-
-    elif GEPARSTE_ARGUMENTE.dateiname:
-        # Dateieingabe verarbeiten. argumente.zeitwerte werden dabei verworfen.
-        if GEPARSTE_ARGUMENTE.zeitwerte:
-            eprint('Ignoriere ', *GEPARSTE_ARGUMENTE.zeitwerte)
-        for zeile in GEPARSTE_ARGUMENTE.dateiname:
-            if not zeile.rstrip():
-                print()
-            elif zeile.lstrip('#') != zeile:
-                pass
-            else:
-                print(*liba.auswerten(zeile.split(),\
-                                      GEPARSTE_ARGUMENTE.t,\
-                                      GEPARSTE_ARGUMENTE.start_gegeben))
-
-
-    elif GEPARSTE_ARGUMENTE.zeitwerte:
-        if GEPARSTE_ARGUMENTE.roh:
-            print(*liba.auswerten(GEPARSTE_ARGUMENTE.zeitwerte,\
-                                  GEPARSTE_ARGUMENTE.t,\
-                                  GEPARSTE_ARGUMENTE.start_gegeben))
-        else:
-            resultat_wrappen(liba.auswerten(GEPARSTE_ARGUMENTE.zeitwerte,\
-                                            GEPARSTE_ARGUMENTE.t,\
-                                            GEPARSTE_ARGUMENTE.start_gegeben), \
-                             GEPARSTE_ARGUMENTE.konformitaetsinfo, \
-                             GEPARSTE_ARGUMENTE.unkorrigiert)
-
+    command_line_interface(GEPARSTE_ARGUMENTE.zeitwerte, GEPARSTE_ARGUMENTE.t, \
+                           GEPARSTE_ARGUMENTE.start_gegeben, GEPARSTE_ARGUMENTE.roh, \
+                           GEPARSTE_ARGUMENTE.version, \
+                           GEPARSTE_ARGUMENTE.konformitaetsinfo, GEPARSTE_ARGUMENTE.unkorrigiert)
     sys.exit(0)
-'''
