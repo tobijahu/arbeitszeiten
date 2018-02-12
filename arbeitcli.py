@@ -55,7 +55,11 @@ def create_parser():
         'zeitwerte', nargs='*',
         default=sys.stdin,
         metavar="Zeitwerte",
-        help='Zeitwerte als Berechnungsgrundlage. Argumente im hh:mm Format werden als Zeitpunkte und ganzzahlige Werte als Pausenzeiten intepretiert. Eingaben über stdin in diesen Formaten werden verarbeitet, wenn keine Werte als Argumente übergeben werden. Bei fehlender Eingabe wird der gegenwärtige Zeitpunkt als Startzeit gewählt.')
+        help='Zeitwerte als Berechnungsgrundlage. \
+              Argumente im hh:mm Format werden als Zeitpunkte und ganzzahlige Werte als \
+              Pausenzeiten intepretiert. Eingaben über stdin in diesen Formaten werden \
+              verarbeitet, wenn keine Werte als Argumente übergeben werden. Bei fehlender \
+              Eingabe wird der gegenwärtige Zeitpunkt als Startzeit gewählt.')
 
     parser_objekt.add_argument(
         '-t', type=str, required=False,
@@ -162,47 +166,37 @@ def resultat_wrappen(resultat, konform, unkorrigiert):
             eprint('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
 
 
-def command_line_interface(zeitwerte=None, t=None, start_gegeben=None, roh=None, version=None, \
-                           konformitaetsinfo=None, unkorrigiert=None):
-    '''
-    Aufruf zur Verarbeitetung eingegebener Werte.
-    '''
-    if version:
+
+if __name__ == "__main__":
+    NEUE_PARSER_INSTANZ = create_parser()
+    GEPARSTE_ARGUMENTE = NEUE_PARSER_INSTANZ.parse_args()
+
+    if GEPARSTE_ARGUMENTE.version:
         print(__version__)
 
 
     elif not sys.stdin.isatty():
-        for zeile in zeitwerte:
+        for zeile in GEPARSTE_ARGUMENTE.zeitwerte:
             if not zeile.rstrip():
                 print()
             elif zeile.lstrip('#') != zeile:
                 pass
             else:
                 print(*liba.auswerten(zeile.split(),\
-                                      t,\
-                                      start_gegeben))
+                                      GEPARSTE_ARGUMENTE.t,\
+                                      GEPARSTE_ARGUMENTE.start_gegeben))
     else:
         if sys.stdin.isatty():
-            zeitwerte = [str(time.localtime().tm_hour) + ':' + str(time.localtime().tm_min)]
-        if roh:
-            print(*liba.auswerten(zeitwerte,\
-                                  t,\
-                                  start_gegeben))
+            GEPARSTE_ARGUMENTE.zeitwerte = [str(time.localtime().tm_hour) + ':' + \
+                                            str(time.localtime().tm_min)]
+        if GEPARSTE_ARGUMENTE.roh:
+            print(*liba.auswerten(GEPARSTE_ARGUMENTE.zeitwerte,\
+                                  GEPARSTE_ARGUMENTE.t,\
+                                  GEPARSTE_ARGUMENTE.start_gegeben))
         else:
-            resultat_wrappen(liba.auswerten(zeitwerte,\
-                                            t,\
-                                            start_gegeben), \
-                             konformitaetsinfo, \
-                             unkorrigiert)
-    return
-
-
-if __name__ == "__main__":
-    NEUE_PARSER_INSTANZ = create_parser()
-    GEPARSTE_ARGUMENTE = NEUE_PARSER_INSTANZ.parse_args()
-
-    command_line_interface(GEPARSTE_ARGUMENTE.zeitwerte, GEPARSTE_ARGUMENTE.t, \
-                           GEPARSTE_ARGUMENTE.start_gegeben, GEPARSTE_ARGUMENTE.roh, \
-                           GEPARSTE_ARGUMENTE.version, \
-                           GEPARSTE_ARGUMENTE.konformitaetsinfo, GEPARSTE_ARGUMENTE.unkorrigiert)
+            resultat_wrappen(liba.auswerten(GEPARSTE_ARGUMENTE.zeitwerte,\
+                                            GEPARSTE_ARGUMENTE.t,\
+                                            GEPARSTE_ARGUMENTE.start_gegeben), \
+                             GEPARSTE_ARGUMENTE.konformitaetsinfo, \
+                             GEPARSTE_ARGUMENTE.unkorrigiert)
     sys.exit(0)
