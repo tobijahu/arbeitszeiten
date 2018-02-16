@@ -14,6 +14,7 @@ import sys
 import os.path
 import argparse
 import time
+import platform
 
 
 try:
@@ -166,6 +167,17 @@ def resultat_wrappen(resultat, konform, unkorrigiert):
             eprint('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
 
 
+def os_ist_windows():
+    '''
+    Gib True, wenn das OS Windows ist und False sonst.
+    '''
+    return platform.system() == 'Windows'
+
+def os_ist_linux():
+    '''
+    Gib True, wenn das OS Linux ist und False sonst.
+    '''
+    return platform.system() == 'Linux'
 
 if __name__ == "__main__":
     NEUE_PARSER_INSTANZ = create_parser()
@@ -173,9 +185,7 @@ if __name__ == "__main__":
 
     if GEPARSTE_ARGUMENTE.version:
         print(__version__)
-
-
-    elif not sys.stdin.isatty():
+    elif not os_ist_windows() and not sys.stdin.isatty():
         for zeile in GEPARSTE_ARGUMENTE.zeitwerte:
             if not zeile.rstrip():
                 print()
@@ -186,7 +196,9 @@ if __name__ == "__main__":
                                       GEPARSTE_ARGUMENTE.t,\
                                       GEPARSTE_ARGUMENTE.start_gegeben))
     else:
-        if sys.stdin.isatty():
+        try:
+            len(GEPARSTE_ARGUMENTE.zeitwerte)#Leerer stdin läuft hier in Fehler
+        except:
             GEPARSTE_ARGUMENTE.zeitwerte = [str(time.localtime().tm_hour) + ':' + \
                                             str(time.localtime().tm_min)]
         if GEPARSTE_ARGUMENTE.roh:
