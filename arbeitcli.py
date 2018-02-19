@@ -133,7 +133,7 @@ def mini_wrapper(string, bezeichnung, wert):
     return string
 
 
-def resultat_wrappen(resultat, konform, unkorrigiert):
+def resultat_wrappen(resultat, konform, unkorrigiert, einzelwert):
     '''
     Je nach zurückgegebenen Werten, wird das Ergebnis angezeigt.
     '''
@@ -157,7 +157,9 @@ def resultat_wrappen(resultat, konform, unkorrigiert):
         string = mini_wrapper(string, 'Pausenzeit: ', resultat[3])
     print(string)
     if konform and not resultat[5]:
-        if not resultat[0] and diff > 0:
+        if einzelwert:
+            eprint('Pause nach gesetzlicher Regelung hinzugefügt.')
+        elif not resultat[0] and diff > 0:
             eprint('Arbeits- und/oder Pausenzeiten an gesetzliche Regelung angepasst.')
             eprint('%r Minute(n) Pause hinzugefügt.' % diff)
         elif resultat[0] and diff > 0:
@@ -165,6 +167,7 @@ def resultat_wrappen(resultat, konform, unkorrigiert):
             eprint('Zusätzliche Pause von %r Minute(n) erforderlich.' % diff)
         else:
             eprint('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
+    return
 
 
 def os_ist_windows():
@@ -182,6 +185,7 @@ def os_ist_linux():
 if __name__ == "__main__":
     NEUE_PARSER_INSTANZ = create_parser()
     GEPARSTE_ARGUMENTE = NEUE_PARSER_INSTANZ.parse_args()
+    EINZELNER_WERT = False
 
     if GEPARSTE_ARGUMENTE.version:
         print(__version__)
@@ -198,9 +202,12 @@ if __name__ == "__main__":
     else:
         try:
             len(GEPARSTE_ARGUMENTE.zeitwerte)#Leerer stdin läuft hier in Fehler
-        except:
+        except TypeError:
             GEPARSTE_ARGUMENTE.zeitwerte = [str(time.localtime().tm_hour) + ':' + \
                                             str(time.localtime().tm_min)]
+            print("Gegenwärtige Zeit als Startzeit gewählt: "+str(GEPARSTE_ARGUMENTE.zeitwerte[0]))
+        if len(GEPARSTE_ARGUMENTE.zeitwerte) == 1:
+            EINZELNER_WERT = True
         if GEPARSTE_ARGUMENTE.roh:
             print(*liba.auswerten(GEPARSTE_ARGUMENTE.zeitwerte,\
                                   GEPARSTE_ARGUMENTE.t,\
@@ -210,5 +217,6 @@ if __name__ == "__main__":
                                             GEPARSTE_ARGUMENTE.t,\
                                             GEPARSTE_ARGUMENTE.start_gegeben), \
                              GEPARSTE_ARGUMENTE.konformitaetsinfo, \
-                             GEPARSTE_ARGUMENTE.unkorrigiert)
+                             GEPARSTE_ARGUMENTE.unkorrigiert, \
+                             EINZELNER_WERT)
     sys.exit(0)
