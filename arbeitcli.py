@@ -198,8 +198,7 @@ if __name__ == "__main__":
         try:
             len(GEPARSTE_ARGUMENTE.zeitwerte)#Leerer stdin läuft hier in Fehler
         except TypeError:
-            GEPARSTE_ARGUMENTE.zeitwerte = [str(time.localtime().tm_hour) + ':' + \
-                                            str(time.localtime().tm_min)]
+            GEPARSTE_ARGUMENTE.zeitwerte = [liba.aktuelle_zeit()]
             print("Gegenwärtige Zeit als Startzeit gewählt: "+str(GEPARSTE_ARGUMENTE.zeitwerte[0]))
         if len(GEPARSTE_ARGUMENTE.zeitwerte) == 1:
             EINZELNER_WERT = True

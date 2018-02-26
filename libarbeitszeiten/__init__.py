@@ -1,4 +1,3 @@
-#!/bin/python3
 # -*- coding: utf-8 -*-
 
 """
@@ -10,10 +9,11 @@ Aus Zeitwerten die Arbeitszeit und Pausen berechnen
 # This is used in order to have a run-time queryable
 # mechanism.
 #
-__version__ = 0.1
+__version__ = '0.1'
 __author__ = 'Tobias Mettenbrink'
 
 import re
+import time
 
 TAGESARBEITSMINUTEN = 8*60
 
@@ -97,6 +97,8 @@ def minuten_zu_zeitstring(minuten):
     Bsp.: 30 wird zu (0,30) konvertiert, was 00:30 Uhr entspricht.
     Bem.: minuten soll keine größeren Werte annehmen, als die Anzahl der Minuten
     eines Tages.
+    minuten
+        minutes, range [0, 1440]
     """
     try:
         assert isinstance(minuten, (int, float)), "%r is not an integer or float" % minuten
@@ -110,7 +112,7 @@ def minuten_zu_zeitstring(minuten):
     if stunden < 10:
         stunden = "0" + str(stunden)
 
-    minuten = minuten % 60
+    minuten = int(round(minuten)) % 60
     if minuten < 10:
         minuten = "0" + str(minuten)
 
@@ -256,6 +258,10 @@ def pausengesetz_vereinfacht(tagesarbeitsminuten, tagespausenzeit):
     des Arbeitszeitgesetzes aus. Es wird überprüft, ob die gearbeitete
     Zeit tagesarbeitsminuten und die Pausen tagespausenzeit den Bestim-
     mungen genügen.
+    tagesarbeitsminuten
+        minutes, range [0, 1440]
+    tagespausenzeit
+        minutes, range [0, 1440]
     """
     try:
         assert isinstance(tagesarbeitsminuten, int),\
@@ -280,6 +286,10 @@ def pausenzeit_korrektur(tagesarbeitsminuten, tagespausenzeit):
     Hier wird die in der BRD gesetzlich vorgeschriebene Pausenzeit aus-
     gewertet und ggf. ein Differenzwert zur gesetzlichen Regelung aus-
     gegeben.
+    tagesarbeitsminuten
+        minutes, range [0, 1440]
+    tagespausenzeit
+        minutes, range [0, 1440]
     """
     try:
         assert isinstance(tagesarbeitsminuten, int),\
@@ -306,3 +316,7 @@ def pausengesetz():
     Gesetz angegeben wurden.
     """
     pass
+
+
+def aktuelle_zeit():
+    return str(time.localtime().tm_hour) + ':' + str(time.localtime().tm_min)
