@@ -5,12 +5,16 @@
 Ein Interface zu libarbeitszeiten mit interaktiver Shell.
 '''
 
+# Libraries to support python 2.x
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import sys
 import os.path
 import argparse
 import time
 import platform
-
 
 try:
     import libarbeitszeiten as liba
