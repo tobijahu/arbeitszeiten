@@ -9,13 +9,20 @@ Aus Zeitwerten die Arbeitszeit und Pausen berechnen
 # This is used in order to have a run-time queryable
 # mechanism.
 #
-__version__ = '0.1'
-__author__ = 'Tobias Mettenbrink'
+__author__ = "Tobias Mettenbrink"
+__copyright__ = "Copyright 2018, Tobias Mettenbrink"
+__credits__ = ["Tobias Mettenbrink"]
+__license__ = "GPL v3.0"
+__version__ = "0.1"
+__maintainer__ = "Tobias Mettenbrink"
+__email__ = ""
+__status__ = "Production"
 
 import re
 import time
 
 TAGESARBEITSMINUTEN = 8*60
+
 
 def ist_zeitstring(zeit_string):
     """
@@ -227,6 +234,7 @@ explicit time (no duration).')
     zeit_differenz = intervall_summe(zeitpunkte_liste)
 
     startzeit = None
+    pausenzeit = None
     endzeit = None
 
     if len(zeitpunkte_liste) % 2 == 1:
@@ -238,11 +246,11 @@ explicit time (no duration).')
         if ist_zeitstring(gemischte_liste[0]) and start_gegeben:
             # Zeitpunkt ist positiv, Pausen und Arbeitszeit werden addiert
             endzeit = zeit_differenz + sum(pausen_liste) + tagesarbeitsminuten
-            pausenzeit = endzeit - tagesarbeitsminuten - min(zeitpunkte_liste) #prognose
+            pausenzeit = endzeit - tagesarbeitsminuten - min(zeitpunkte_liste)  # prognose
         elif not ist_zeitstring(gemischte_liste[0]) or not start_gegeben:
             # Zeitpunkt ist positiv, Arbeitszeit und Pausen werden subtrahiert
             startzeit = zeit_differenz - sum(pausen_liste) - tagesarbeitsminuten
-            pausenzeit = max(zeitpunkte_liste) - tagesarbeitsminuten - startzeit #prognose
+            pausenzeit = max(zeitpunkte_liste) - tagesarbeitsminuten - startzeit  # prognose
     else:
         # Gesamtarbeitszeit berechnen
         tagesarbeitsminuten = zeit_differenz - sum(pausen_liste)

@@ -2,16 +2,28 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-import libarbeitszeiten as liba
-#from ping import create_parser, ping
-from arbeitcli import create_parser, command_line_interface
+import libarbeitszeiten as libaz
+# from ping import create_parser, ping
+# from arbeitcli import create_parser, command_line_interface
+from arbeitcli import create_parser
 
 import subprocess
+
+__author__ = "Tobias Mettenbrink"
+__copyright__ = "Copyright 2018, Tobias Mettenbrink"
+__credits__ = ["Tobias Mettenbrink"]
+__license__ = "GPL v3.0"
+__version__ = "0.1"
+__maintainer__ = "Tobias Mettenbrink"
+__email__ = ""
+__status__ = "Production"
+
 
 class CommandLineTestCase(TestCase):
     """
     Base TestCase class, sets up a CLI parser
     """
+
     @classmethod
     def setUpClass(cls):
         parser = create_parser()
@@ -22,29 +34,30 @@ class ArbeitCLITestCase(CommandLineTestCase):
     def test_with_empty_args():
         """
         User passes no args, should fail with SystemExit
-        """                                    
+        """
         with self.assertRaises(SystemExit):
             self.parser.parse_args([])
 
-    def test_arbeitszeit_berechnen():
-        """
-        
-        """
-        command_line_interface(GEPARSTE_ARGUMENTE.zeitwerte, GEPARSTE_ARGUMENTE.t, GEPARSTE_ARGUMENTE.start_gegeben, GEPARSTE_ARGUMENTE.roh, GEPARSTE_ARGUMENTE.version, \
-                               GEPARSTE_ARGUMENTE.dateiname, GEPARSTE_ARGUMENTE.konformitaetsinfo, GEPARSTE_ARGUMENTE.unkorrigiert)
-        args = self.parser.parse_args(['-r', '8:0', '30', '1', '20:30'])
-        result = ping(args.zeitwerte, args.region, args.ami)
-        self.assertIsNotNone(result)
-        # Do some othe assertions on the result
+    #    def test_arbeitszeit_berechnen():
+    #        """
+    #
+    #        """
+    #        command_line_interface(GEPARSTE_ARGUMENTE.zeitwerte, GEPARSTE_ARGUMENTE.t, GEPARSTE_ARGUMENTE.start_gegeben, GEPARSTE_ARGUMENTE.roh, GEPARSTE_ARGUMENTE.version, \
+    #                               GEPARSTE_ARGUMENTE.dateiname, GEPARSTE_ARGUMENTE.konformitaetsinfo, GEPARSTE_ARGUMENTE.unkorrigiert)
+    #        args = self.parser.parse_args(['-r', '8:0', '30', '1', '20:30'])
+    #        result = ping(args.zeitwerte, args.region, args.ami)
+    #        self.assertIsNotNone(result)
+    #        # Do some othe assertions on the result
 
-    def test_db_servers_ubuntu_ami_in_australia():
+    def test_standard_input(self):
         """
         Find database servers with the Ubuntu AMI in Australia region
         """
-        args = self.parser.parse_args(['database', '-R', 'australia', '-A', 'idbs81839'])
-        result = ping(args.tags, args.region, args.ami)
+        args = self.parser.parse_args(['-r', '8:0', '-t', '361', '-e'])
+        result = libaz.auswerten(args.zeitwerte, args.t, args.start_gegeben)
         self.assertIsNotNone(result)
         # Do some othe assertions on the result
+
 
 '''
 http://dustinrcollins.com/testing-python-command-line-apps

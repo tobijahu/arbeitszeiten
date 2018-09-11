@@ -1,17 +1,29 @@
 #!/bin/python3
 # -*- coding: utf-8 -*-
 
-'''
+"""
 Testscript für libarbeitszeiten.py mit unittests für alle Funktionen.
-'''
+"""
 
 import unittest
 import libarbeitszeiten as liba
 
+__author__ = "Tobias Mettenbrink"
+__copyright__ = "Copyright 2018, Tobias Mettenbrink"
+__credits__ = ["Tobias Mettenbrink"]
+__license__ = "GPL v3.0"
+__version__ = "0.1"
+__maintainer__ = "Tobias Mettenbrink"
+__email__ = ""
+__status__ = "Production"
+
+
 class TestStringMethods(unittest.TestCase):
-    ''' TestCase-Testklasse aus unittest modul '''
+    """
+    TestCase-Testklasse aus unittest modul
+    """
     def test_ist_zeitstring(self):
-        '''
+        """
         Positiv- und Negativtests von liba.ist_zeitstring()
         Äquivalenzklassen: 1) t < 0:0 (negativ)
                            2) 0:0 <= t <= 24:00 (positiv)
@@ -20,7 +32,7 @@ class TestStringMethods(unittest.TestCase):
                            *) Ausdrücke mit mehr als einem ':' (negativ)
                            *) Ausdrücke mit Zeichen nicht aus '0-9:-' (negativ)
                            *) nicht-String-Ausdrücke (negativ)
-        '''
+        """
         # Äquivalenzklassen
         self.assertTrue(liba.ist_zeitstring('09:55'))
         self.assertTrue(liba.ist_zeitstring('9:5'))
@@ -50,13 +62,13 @@ class TestStringMethods(unittest.TestCase):
         self.assertFalse(liba.ist_zeitstring(60))
 
     def test_ist_minuten(self):
-        '''
+        """
         Äquivalenzklassen: 1) t < 0 (negativ)
                            2) t >= 0 (positiv)
                            3) Alles noch einmal als Strings (negativ + positiv)
         Weitere:           *) Interessante Werte (positiv)
                            *) Nicht-erlaubte Zeichen (negativ)
-        '''
+        """
         # Äquivalenzklassen / Grenzwertanalyse
         self.assertFalse(liba.ist_minuten(-1))
         self.assertTrue(liba.ist_minuten(0))
@@ -79,13 +91,13 @@ class TestStringMethods(unittest.TestCase):
         self.assertFalse(liba.ist_minuten('-1j'))
 
     def test_zeitstring_zu_minuten(self):
-        '''
+        """
         Äquivalenzklassen: 1) hh:mm < 00:00 (negativ)
                            2) 00:00 <= hh:mm <= 24:00 (positiv)
                            3) hh:mm > 24:00 (negativ)
         Weitere            *) Tripel (negativ)
                            *) Nicht-erlaubte Zeichen (negativ)
-        '''
+        """
         # Äquivalenzklassen
         with self.assertRaises(ValueError):
             liba.zeitstring_zu_minuten("-12:34")
@@ -124,7 +136,10 @@ class TestStringMethods(unittest.TestCase):
             liba.zeitstring_zu_minuten(8)
 
     def test_minuten_zu_zeitstring(self):
-        ''' Tests für die Konvertierung einer ganzen Zahl zu einem Zeitstring "hh:mm" '''
+        """
+        Tests für die Konvertierung einer ganzen Zahl zu einem Zeitstring "hh:mm"
+        :return:
+        """
         # Äquivalenzklassen
         self.assertEqual(liba.minuten_zu_zeitstring(2*60+15), "02:15")
         self.assertEqual(liba.minuten_zu_zeitstring(523.7249), "08:44")
@@ -145,19 +160,21 @@ class TestStringMethods(unittest.TestCase):
             liba.minuten_zu_zeitstring("24*60+1")
 
     def test_filter_zpkte_pausen(self):
-        ''' Gemischte Liste aus Eingabewerten in zwei geordnete Listen umwandeln '''
+        """
+        Gemischte Liste aus Eingabewerten in zwei geordnete Listen umwandeln
+        """
         # Äquivalenzklassen
-        self.assertEqual(liba.filter_zpkte_pausen( \
-                         ["8:15", 55, "12:15", "13:0", 30]), \
+        self.assertEqual(liba.filter_zpkte_pausen(
+                         ["8:15", 55, "12:15", "13:0", 30]),
                          ([8*60+15, 12*60+15, 13*60], [55, 30]))
-        self.assertEqual(liba.filter_zpkte_pausen( \
-                         [55, "12:15", "13:0", 30, "8:15"]), \
+        self.assertEqual(liba.filter_zpkte_pausen(
+                         [55, "12:15", "13:0", 30, "8:15"]),
                          ([12*60+15, 13*60, 8*60+15], [55, 30]))
-        self.assertEqual(liba.filter_zpkte_pausen( \
-                         [55, 30]), \
+        self.assertEqual(liba.filter_zpkte_pausen(
+                         [55, 30]),
                          ([], [55, 30]))
-        self.assertEqual(liba.filter_zpkte_pausen( \
-                         ["12:15", "13:0", "8:15"]), \
+        self.assertEqual(liba.filter_zpkte_pausen(
+                         ["12:15", "13:0", "8:15"]),
                          ([12*60+15, 13*60, 8*60+15], []))
         with self.assertRaises(ValueError):
             liba.filter_zpkte_pausen(["8:15", 55, "12:15", "25:0", "13:0", 30])
@@ -167,21 +184,23 @@ class TestStringMethods(unittest.TestCase):
             liba.filter_zpkte_pausen(["8:15", 55, "12:15", "22:59", "13:0", 3000])
 
     def test_intervall_summe(self):
-        ''' Tests zum Rechenkern '''
+        """
+        Tests zum Rechenkern
+        """"
         # 12:00 - 08:00 + 16:30 - 12:30 - 30min
-        self.assertEqual(liba.intervall_summe( \
-                         [8*60, 12*60, 12*60+30, 16*60+30]), \
+        self.assertEqual(liba.intervall_summe(
+                         [8*60, 12*60, 12*60+30, 16*60+30]),
                          8*60)
-        self.assertEqual(liba.intervall_summe( \
-                         [8*60, 9*60+30, 9*60+45, 12*60, 12*60+30, 16*60+30]), \
+        self.assertEqual(liba.intervall_summe(
+                         [8*60, 9*60+30, 9*60+45, 12*60, 12*60+30, 16*60+30]),
                          8*60-15)
         # '08:00','09:30','09:45','12:00','12:30',30,'16:30'
-        self.assertEqual(liba.intervall_summe( \
-                         [8*60, 9*60+30, 9*60+45, 12*60, 12*60+30, 16*60+30]), \
+        self.assertEqual(liba.intervall_summe(
+                         [8*60, 9*60+30, 9*60+45, 12*60, 12*60+30, 16*60+30]),
                          8*60-15)
         # '12:00','12:30','16:30'
-        self.assertEqual(liba.intervall_summe( \
-                         [12*60, 12*60+30, 16*60+30]), \
+        self.assertEqual(liba.intervall_summe(
+                         [12*60, 12*60+30, 16*60+30]),
                          (12*60)-(12*60+30)+(16*60+30))
         # Grenzwertanalyse
         self.assertEqual(liba.intervall_summe([-1]), -1)
@@ -194,43 +213,45 @@ class TestStringMethods(unittest.TestCase):
             liba.intervall_summe("['08:00', 30, '16:30']")
 
     def test_auswerten(self):
-        ''' Tests zum integrierter Rechenkern '''
-        self.assertEqual(liba.auswerten(["8:0", "12:0", "12:30", "16:30"], 8*60), \
+        """
+        Tests zum integrierter Rechenkern
+        """
+        self.assertEqual(liba.auswerten(["8:0", "12:0", "12:30", "16:30"], 8*60),
                          (480, None, None, 30, 0, True))
         # 2 Zeitpunkte und Pausendauer:
-        self.assertEqual(liba.auswerten(["8:0", 30, "16:30"], 8*60), \
+        self.assertEqual(liba.auswerten(["8:0", 30, "16:30"], 8*60),
                          (480, None, None, 30, 0, True))
         # 2 Zeitpunkte und 2 Pausendauern:
-        self.assertEqual(liba.auswerten([45, "8:0", 30, "16:30"], 8*60), \
+        self.assertEqual(liba.auswerten([45, "8:0", 30, "16:30"], 8*60),
                          (435, None, None, 75, 0, True))
-        self.assertEqual(liba.auswerten(["8:0", 30, "16:30", 45], 8*60), \
+        self.assertEqual(liba.auswerten(["8:0", 30, "16:30", 45], 8*60),
                          (435, None, None, 75, 0, True))
         # 1 Zeitpunkt und 2 Pausendauern:
-        self.assertEqual(liba.auswerten([45, 30, "16:30"], 8*60), \
+        self.assertEqual(liba.auswerten([45, 30, "16:30"], 8*60),
                          (8*60, 7*60+15, None, 75, 0, True))
-        self.assertEqual(liba.auswerten([45, 30, "16:30"], 8*60, start_gegeben=False), \
+        self.assertEqual(liba.auswerten([45, 30, "16:30"], 8*60, start_gegeben=False),
                          (8*60, 7*60+15, None, 75, 0, True))
-        self.assertEqual(liba.auswerten(["8:0", 30, 46], 8*60), \
+        self.assertEqual(liba.auswerten(["8:0", 30, 46], 8*60),
                          (8*60, None, 17*60+16, 30+46, 0, True))
         # 3 Zeitpunkte:
-        self.assertEqual(liba.auswerten(["12:0", "12:30", "16:30"], \
-                                   8*60, start_gegeben=False), \
+        self.assertEqual(liba.auswerten(["12:0", "12:30", "16:30"],
+                                   8*60, start_gegeben=False),
                          (8*60, 8*60, None, 30, 0, True))
-        self.assertEqual(liba.auswerten(["12:0", "12:30", "16:30"], 8*60), \
+        self.assertEqual(liba.auswerten(["12:0", "12:30", "16:30"], 8*60),
                          (8*60, None, 24*60, 4*60, 0, True))
-        self.assertEqual(liba.auswerten(["8:0", "12:00", "12:30"], 8*60), \
+        self.assertEqual(liba.auswerten(["8:0", "12:00", "12:30"], 8*60),
                          (8*60, None, (8+8)*60+30, 30, 0, True))
         # unsortierte Zeitpunkte
-        self.assertEqual(liba.auswerten(["16:30", "12:0"], 8*60), \
+        self.assertEqual(liba.auswerten(["16:30", "12:0"], 8*60),
                          (16*60+30 - 12*60, None, None, 0, 0, True))
-        self.assertEqual(liba.auswerten(["16:30", "12:0", "12:30"], 8*60), \
+        self.assertEqual(liba.auswerten(["16:30", "12:0", "12:30"], 8*60),
                          (8*60, None, 24*60, 16*60+30-(12*60+30), 0, True))
-        self.assertEqual(liba.auswerten(["13:0", "7:0", "12:30"], 8*60), \
+        self.assertEqual(liba.auswerten(["13:0", "7:0", "12:30"], 8*60),
                          (8*60, None, 15*60+30, 30, 0, True))
-        self.assertEqual(liba.auswerten(["13:0", "16:30", "12:30"], 8*60, False), \
+        self.assertEqual(liba.auswerten(["13:0", "16:30", "12:30"], 8*60, False),
                          (8*60, 8*60, None, 30, 0, True))
         # nicht-konforme Pausenzeiten
-        self.assertEqual(liba.auswerten([5, "16:30"], 8*60), \
+        self.assertEqual(liba.auswerten([5, "16:30"], 8*60),
                          (8*60, 8*60+25, None, 5, 25, False))
         with self.assertRaises(AssertionError):
             liba.auswerten('["12:0", "12:30", "16:30"]', 50)
@@ -244,7 +265,9 @@ class TestStringMethods(unittest.TestCase):
             liba.auswerten(["12:0", "12:30", "16:30"], -50)
 
     def test_pausengesetz_vereinfacht(self):
-        ''' Tests zum vereinfachten Pausengesetz '''
+        """
+        Tests zum vereinfachten Pausengesetz
+        """
         # Äquivalenzklassen
         self.assertTrue(liba.pausengesetz_vereinfacht(5*60+1, 0))
         self.assertFalse(liba.pausengesetz_vereinfacht(6*60+35, 25))
@@ -271,10 +294,10 @@ class TestStringMethods(unittest.TestCase):
         self.assertFalse(liba.pausengesetz_vereinfacht(10*60+1, 24*60-(10*60+1)))
 
     def test_pausengesetz(self):
-        '''
+        """
         Das Arbeitsrecht sieht vor, dass man nach bestimmten Arbeitszeiten Pausen nimmt.
         Daher können hier nur Zeitpunkte und nicht Pausenminuten ausgewertet werden.
-        '''
+        """
         pass
         # Äquivalenzklassen
         self.assertTrue(liba.pausengesetz(["8:00", "14:00"]))

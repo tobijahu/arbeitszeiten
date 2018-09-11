@@ -1,9 +1,9 @@
 #!/bin/python3
 # -*- coding: utf-8 -*-
 
-'''
+"""
 Ein Interface zu libarbeitszeiten mit interaktiver Shell.
-'''
+"""
 
 # Libraries to support python 2.x
 from __future__ import absolute_import
@@ -13,39 +13,44 @@ from __future__ import print_function
 import sys
 import os.path
 import argparse
-import time
 import platform
 
-try:
-    import libarbeitszeiten as liba
-except ImportError:
-    eprint('Could not import module libarbeitszeiten. \
-Check, if libarbeitszeiten.py is available in this dir.')
 
-__author__ = 'Tobias Mettenbrink'
-__version__ = '0.1'
+__author__ = "Tobias Mettenbrink"
+__copyright__ = "Copyright 2018, Tobias Mettenbrink"
+__credits__ = ["Tobias Mettenbrink"]
+__license__ = "GPL v3.0"
+__version__ = "0.1"
+__maintainer__ = "Tobias Mettenbrink"
+__email__ = ""
+__status__ = "Production"
 
 
 def eprint(*args, **kwargs):
-    '''
+    """
     Print to stderr
-    '''
+    """
     print(*args, file=sys.stderr, **kwargs)
+
+try:
+    import libarbeitszeiten as libaz
+except ImportError:
+    eprint('Could not import module libarbeitszeiten.')
 
 
 def is_valid_file(parser_instanz, arg):
-    '''
+    """
     Prüfe, ob arg eine valide Datei ist
-    '''
+    """
     if not os.path.exists(arg):
         parser_instanz.error("The file %s does not exist!" % arg)
     return open(arg, 'r')  # return an open file handle
 
 
 def create_parser():
-    '''
-    Parser  für CLI bauen
-    '''
+    """
+    Parser für CLI bauen
+    """
     parser_objekt = argparse.ArgumentParser(
         description='Berechne Arbeitszeiten oder schlage gesetzeskonforme Arbeitszeiten vor',
         prog='arbeitcli',
@@ -55,15 +60,16 @@ def create_parser():
         'zeitwerte', nargs='*',
         default=sys.stdin,
         metavar="Zeitwerte",
-        help='Zeitwerte als Berechnungsgrundlage. \
-              Argumente im hh:mm Format werden als Zeitpunkte und ganzzahlige Werte als \
-              Pausenzeiten intepretiert. Eingaben über stdin in diesen Formaten werden \
-              verarbeitet, wenn keine Werte als Argumente übergeben werden. Bei fehlender \
-              Eingabe wird der gegenwärtige Zeitpunkt als Startzeit gewählt.')
+        help="Zeitwerte als Berechnungsgrundlage. \
+              Argumente im hh:mm Format werden als Zeitpunkte und ganzzahlige\
+              Werte als Pausenzeiten intepretiert. Eingaben über stdin in \
+              diesen Formaten werden verarbeitet, wenn keine Werte als \
+              Argumente übergeben werden. Bei fehlender Eingabe wird der \
+              gegenwärtige Zeitpunkt als Startzeit gewählt.")
 
     parser_objekt.add_argument(
         '-t', type=str, required=False,
-        default=liba.TAGESARBEITSMINUTEN,
+        default=libaz.TAGESARBEITSMINUTEN,
         help='Gesamte Arbeitszeit des Tages in Minuten')
 
     parser_objekt.add_argument(
@@ -95,10 +101,10 @@ def create_parser():
 
 
 def option_tagesarbeitsminuten(arg):
-    '''
+    """
     Auswertung der Option -t. Die Nutzung dieser Option sieht die Übergabe
     eines Wertes vor, der hier ausgewertet wird.
-    '''
+    """
     if not arg.split("=")[0] == '-t':
         return None
     if len(arg.split("=")) > 1:
@@ -117,14 +123,14 @@ def option_tagesarbeitsminuten(arg):
 
 
 def mini_wrapper(string, bezeichnung, wert):
-    '''
+    """
     Bezeichnung, Zeitwert und Komma an übergebenen String weitergeben
-    '''
+    """
     if string:
         string += ', '
     string += str(bezeichnung)
     tage, minuten = divmod(wert, 24*60)
-    string += liba.minuten_zu_zeitstring(minuten)
+    string += libaz.minuten_zu_zeitstring(minuten)
     if tage == 1:
         string += ' (n. T.)'
     elif tage > 0:
@@ -133,9 +139,9 @@ def mini_wrapper(string, bezeichnung, wert):
 
 
 def resultat_wrappen(resultat, konform, unkorrigiert, einzelwert):
-    '''
+    """
     Je nach zurückgegebenen Werten, wird das Ergebnis angezeigt.
-    '''
+    """
 
     if len(resultat) != 6:
         raise AssertionError
@@ -159,7 +165,8 @@ def resultat_wrappen(resultat, konform, unkorrigiert, einzelwert):
         if einzelwert:
             eprint('Pause nach gesetzlicher Regelung hinzugefügt.')
         elif not resultat[0] and diff > 0:
-            eprint('Arbeits- und/oder Pausenzeiten an gesetzliche Regelung angepasst.')
+            eprint('Arbeits- und/oder Pausenzeiten an gesetzliche Regelung\
+                   angepasst.')
             eprint('%r Minute(n) Pause hinzugefügt.' % diff)
         elif resultat[0] and diff > 0:
             eprint('Arbeits- und/oder Pausenzeit nicht gesetzesconform')
@@ -170,16 +177,18 @@ def resultat_wrappen(resultat, konform, unkorrigiert, einzelwert):
 
 
 def os_ist_windows():
-    '''
+    """
     Gib True, wenn das OS Windows ist und False sonst.
-    '''
+    """
     return platform.system() == 'Windows'
 
+
 def os_ist_linux():
-    '''
+    """
     Gib True, wenn das OS Linux ist und False sonst.
-    '''
+    """
     return platform.system() == 'Linux'
+
 
 if __name__ == "__main__":
     NEUE_PARSER_INSTANZ = create_parser()
@@ -195,26 +204,27 @@ if __name__ == "__main__":
             elif zeile.lstrip('#') != zeile:
                 pass
             else:
-                print(*liba.auswerten(zeile.split(),\
-                                      GEPARSTE_ARGUMENTE.t,\
-                                      GEPARSTE_ARGUMENTE.start_gegeben))
+                print(*libaz.auswerten(zeile.split(),
+                      GEPARSTE_ARGUMENTE.t,
+                      GEPARSTE_ARGUMENTE.start_gegeben))
     else:
         try:
-            len(GEPARSTE_ARGUMENTE.zeitwerte)#Leerer stdin läuft hier in Fehler
+            len(GEPARSTE_ARGUMENTE.zeitwerte)  # Leerer stdin läuft hier in Fehler
         except TypeError:
-            GEPARSTE_ARGUMENTE.zeitwerte = [liba.aktuelle_zeit()]
-            print("Gegenwärtige Zeit als Startzeit gewählt: "+str(GEPARSTE_ARGUMENTE.zeitwerte[0]))
+            GEPARSTE_ARGUMENTE.zeitwerte = [libaz.aktuelle_zeit()]
+            print("Gegenwärtige Zeit als Startzeit gewählt: "
+                  + str(GEPARSTE_ARGUMENTE.zeitwerte[0]))
         if len(GEPARSTE_ARGUMENTE.zeitwerte) == 1:
             EINZELNER_WERT = True
         if GEPARSTE_ARGUMENTE.roh:
-            print(*liba.auswerten(GEPARSTE_ARGUMENTE.zeitwerte,\
-                                  GEPARSTE_ARGUMENTE.t,\
+            print(*libaz.auswerten(GEPARSTE_ARGUMENTE.zeitwerte,
+                                  GEPARSTE_ARGUMENTE.t,
                                   GEPARSTE_ARGUMENTE.start_gegeben))
         else:
-            resultat_wrappen(liba.auswerten(GEPARSTE_ARGUMENTE.zeitwerte,\
-                                            GEPARSTE_ARGUMENTE.t,\
-                                            GEPARSTE_ARGUMENTE.start_gegeben), \
-                             GEPARSTE_ARGUMENTE.konformitaetsinfo, \
-                             GEPARSTE_ARGUMENTE.unkorrigiert, \
+            resultat_wrappen(libaz.auswerten(GEPARSTE_ARGUMENTE.zeitwerte,
+                                            GEPARSTE_ARGUMENTE.t,
+                                            GEPARSTE_ARGUMENTE.start_gegeben),
+                             GEPARSTE_ARGUMENTE.konformitaetsinfo,
+                             GEPARSTE_ARGUMENTE.unkorrigiert,
                              EINZELNER_WERT)
     sys.exit(0)
